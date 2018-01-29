@@ -22,6 +22,7 @@ def plot3d(input):
         ax.scatter(cords[0],cords[1],cords[2],c='r' if cords[3]<1. else 'b', marker='o' if cords[3]<1. else '^')
 
 
+
     X=np.array(input)[:, :3]
     y=np.array(input)[:, 3]
     # svc = SVC(kernel='linear',verbose=True)
