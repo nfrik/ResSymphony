@@ -21,14 +21,17 @@ ttables['and'] = [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0]]
 np.set_printoptions(precision=4)
 np.set_printoptions(suppress=True)
 
-def generate_random_net(n=20,p=2,k=4):
+def generate_random_net(n=20,p=2,k=4,net_type='ws'):
     # G = nx.complete_graph(10)
-    # G = nx.fast_gnp_random_graph(n=n,p=0.1)
-    # G = nx.barabasi_albert_graph(n,p)
-    G = nx.watts_strogatz_graph(n=n,k=k,p=p)
+    # G = nx.fast_gnp_random_graph(n=n,p=p)
+    if net_type =='ws':
+        G = nx.watts_strogatz_graph(n=n, k=k, p=p)
+    elif net_type == 'ba':
+        G = nx.barabasi_albert_graph(n=n,p=p)
+
     print(G.edges())
-    nx.draw(G, with_labels=True)
-    plt.show()
+    # nx.draw(G, with_labels=True)
+    # plt.show()
     return G
 
 # def generate_random_net_circuit(n=20,p=2):
@@ -49,7 +52,7 @@ def generate_random_net(n=20,p=2,k=4):
 #     return json.dumps(doc,sort_keys=True,indent=4)
 
 
-def generate_random_net_circuit(n=10,p=2,k=4,nin=2,nout=2,el_type='m',rndmzd=False):
+def generate_random_net_circuit(n=10,p=2,k=4,nin=2,nout=2,el_type='m',rndmzd=False,net_type='ws'):
 
     #memristor base configuration
     Ron=100.
@@ -62,7 +65,7 @@ def generate_random_net_circuit(n=10,p=2,k=4,nin=2,nout=2,el_type='m',rndmzd=Fal
 
     elemceil = 10000 # maximum id of element
 
-    G = generate_random_net(n,p,k)
+    G = generate_random_net(n=n,p=p,k=k,net_type=net_type)
     edges = G.edges()
     doc = {}
     doc[0]=['$', 1, 5e-06, 10.634267539816555, 43, 2.0, 50]
@@ -204,7 +207,7 @@ def ttable_single_test(eq_time, inputids, item, jsonstr, outputids, utils):
     return outvals
 
 
-def ttt_launcher(ntests=1,n=30,p=2,k=4,nin=2,nout=5,eq_time=0.5, test_type='xor', save_best=False,iterations=1,el_type='m',rndmzd=False):
+def ttt_launcher(ntests=1,n=30,p=2,k=4,nin=2,nout=5,eq_time=0.5, test_type='xor', save_best=False,iterations=1,el_type='m',rndmzd=False,net_type='ws'):
     # jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ResSymphony/resources/test2_final.json")))
     # inputids=[197,198]
     # outputids=[199,201,203,205]
@@ -213,7 +216,9 @@ def ttt_launcher(ntests=1,n=30,p=2,k=4,nin=2,nout=5,eq_time=0.5, test_type='xor'
     # input['inputids']=inputids
     # input['outputids']=outputids
 
-    inputcirc = generate_random_net_circuit(n=n,p=p,k=k,nin=nin,nout=nout,el_type=el_type,rndmzd=rndmzd)
+    inputcirc = generate_random_net_circuit(n=n,p=p,k=k,nin=nin,nout=nout,el_type=el_type,rndmzd=rndmzd,net_type=net_type)
+
+    # plott.plot_json_graph(inputcirc['circuit'])
 
     results=[]
     for i in range(ntests):
@@ -231,7 +236,7 @@ def ttt_launcher(ntests=1,n=30,p=2,k=4,nin=2,nout=5,eq_time=0.5, test_type='xor'
                                                                                    34) + '.json', 'w') as f:
                 f.write(json.dumps(jsonstr, sort_keys=True))
 
-    return results
+    return results, inputcirc['circuit']
 
 def logreg_test(results):
     x = np.asarray(results)[:,:-1]
@@ -247,10 +252,13 @@ def logreg_test(results):
 
 def minimize_res(n,p,k,eq_time,nout):
     # results = ttt_launcher(ntests=1, n=80, p=0.1, k=4, nin=2, nout=6, eq_time=0.9)
-    results = ttt_launcher(ntests=1, n=n, p=p, k=k, nin=2, nout=nout, eq_time=eq_time,save_best=True,test_type='xor',iterations=20,el_type='m',rndmzd=True)
+    results,inputcirc = ttt_launcher(ntests=1, n=n, p=p, k=k, nin=2,
+                                     nout=nout, eq_time=eq_time,save_best=True,
+                                     test_type='xor',iterations=20,
+                                     el_type='m',rndmzd=True,net_type='ws')
     print(np.array(results).tolist())
     logreg_results = logreg_test(results)
-    plott.plot3d(results)
+    plott.plot3d(results,inputcirc)
     return 10 - np.sum(np.abs(logreg_results))
 
 def main():
