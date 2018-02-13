@@ -133,22 +133,11 @@ def truthtabletest(type='xor',circuit='',eq_time=0.5,iterations=1):
 
     utils = utilities.Utilities(serverUrl="http://localhost:8090/symphony/")
 
-    # response = utils.createNewSimulation()
-    # print(response)
-    # key = json.loads(response)["key"]
-    #
-    # response = utils.loadCircuitFromGraphString(key, jsonstr)
-    # print(response)
-    #
-    # utils.start(key)
-
     ttable = list(ttables[type])
 
 
     results=[]
 
-    # for item in ttable*iterations:
-    #     outvals = ttable_single_test(eq_time, inputids, item, jsonstr, outputids, utils)
 
     items = ttable*iterations
     with mp.pool.ThreadPool(processes=len(ttable)*iterations) as pool:
@@ -157,29 +146,7 @@ def truthtabletest(type='xor',circuit='',eq_time=0.5,iterations=1):
     for outval in outvals:
         results.append(outval)
 
-    # response = utils.getElementProperty(key, str(inputids[0]), "maxVoltage")
-    # print(response)
-    #
-    # response = utils.getCurrent(key, str(outputids[0]))
-    # print(response)
-    #
-    # time.sleep(2)
-    #
-    # response = utils.setElementProperty(key, str(inputids[0]), "maxVoltage", "100.5")
-    # print(response)
-    #
-    # response = utils.getElementProperty(key, str(inputids[0]), "maxVoltage")
-    # print(response)
-    #
-    # time.sleep(2)
-    #
-    # response = utils.getCurrent(key, str(outputids[0]))
-    # print(response)
-
-    # utils.kill(key)
-
     return results
-
 
 def ttable_single_test(eq_time, inputids, item, jsonstr, outputids, utils):
     response = utils.createNewSimulation()
@@ -222,7 +189,7 @@ def ttt_launcher(ntests=1,n=30,p=2,k=4,nin=2,nout=5,eq_time=0.5, test_type='xor'
 
     results=[]
     for i in range(ntests):
-        result=truthtabletest(type=test_type, circuit=inputcirc,eq_time=eq_time,iterations=iterations)
+        result=truthtabletest(type=test_type, circuit=inputcirc, eq_time=eq_time, iterations=iterations)
         for res in result:
             results.append(res)
 

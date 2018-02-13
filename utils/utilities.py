@@ -29,6 +29,13 @@ class Utilities:
 
         return json.loads(json.dumps(response.text))
 
+    # Get all currently running simulations
+    def getSimulations(self):
+        url = Utilities.serverUrl + "simulations"
+
+        response = requests.request("GET", url)
+
+        return json.loads(json.dumps(response.text))
 
     # Append graph elements to current circuit
     def addGraphElements(self,key,elementsJsonString):
