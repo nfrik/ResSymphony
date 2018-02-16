@@ -86,6 +86,82 @@ class NetworkFitter():
 
         return preddiff
 
+    def generate_random_net(self, n=20, p=2, k=4, net_type='ws'):
+        # G = nx.complete_graph(10)
+        # G = nx.fast_gnp_random_graph(n=n,p=p)
+        if net_type == 'ws':
+            G = nx.watts_strogatz_graph(n=n, k=k, p=p)
+        elif net_type == 'ba':
+            G = nx.barabasi_albert_graph(n=n, p=p)
+
+        print(G.edges())
+        # nx.draw(G, with_labels=True)
+        # plt.show()
+        return G
+
+    def generate_random_net_circuit(self,n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndmzd=False, net_type='ws'):
+
+        # memristor base configuration
+        Ron = 100.
+        Roff = 32000.
+        dopwidth = 0.
+        totwidth = 1.0E-8
+        mobility = 1.0E-10
+
+        drainres = 100
+
+        elemceil = 10000  # maximum id of element
+
+        G = self.generate_random_net(n=n, p=p, k=k, net_type=net_type)
+        edges = G.edges()
+        doc = {}
+        doc[0] = ['$', 1, 5e-06, 10.634267539816555, 43, 2.0, 50]
+        for e, elemid in zip(edges, range(1, len(edges) + 1)):
+            # lst=["m",e[0],e[1],0,i,"100.0","32000.0","0.0","1.0E-8","1.0E-10"]
+            if el_type == 'm':
+                totwidth_rnd = totwidth + random.uniform(-totwidth / 5., totwidth / 5.)
+                dopwidth_rnd = random.uniform(0., totwidth_rnd)
+                lst = ["m", e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth if rndmzd else dopwidth_rnd),
+                       str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
+            elif el_type == 'd':
+                lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
+            doc[elemid] = lst
+
+        nodes = list(G.nodes)
+
+        inoutnodes = random.sample(nodes, nin + nout)
+
+        inputids = []
+        outputids = []
+
+        for k in inoutnodes[:nin]:
+            elemid += 1
+            elemceil -= 1
+            # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]
+            lst = ["R", k, elemceil, 0, elemid, "0", "40.0", "0.01", "0.0", "0.0", "0.5"]
+            doc[elemid] = lst
+            inputids.append(elemid)
+
+        for k in inoutnodes[nin:nin + nout]:
+            elemid += 1
+            elemceil -= 1
+            lst = ["r", k, elemceil, 0, elemid, str(drainres)]
+            doc[elemid] = lst
+            outputids.append(elemid)
+
+            elemid += 1
+            elemsav = elemceil
+            elemceil -= 1
+            lst = ["g", elemsav, elemceil, 0, 0]
+            doc[elemid] = lst
+
+        result = {}
+        result['circuit'] = json.dumps(doc, sort_keys=True, indent=4)
+        result['inputids'] = inputids
+        result['outputids'] = outputids
+
+        return result
+
 def main():
     ttables = {}
     ttables['xor'] = [[-1, -1, 0], [-1, 1, 1], [1, -1, 1], [1, 1, 0]]
@@ -117,9 +193,13 @@ def main():
     results = nf.network_eval(X, y)
     results = nf.logreg_fit(results)
 
-
     print("Final result vector: ",np.sum(np.abs(results)))
     return results
 
+def other_main():
+    nf = NetworkFitter()
+    nf.circuit=nf.generate_random_net()
+    print(nf.circuit)
+
 if __name__ == "__main__":
-    main()
+    other_main()

@@ -314,11 +314,11 @@ class Utilities:
         return json.loads(json.dumps(response.text))
 
 def main():
-    # general_test()
+    general_test()
 
     # voltage_set_test()
 
-    current_dynamic_test()
+    # current_dynamic_test()
 
 def voltage_set_test():
     utils = Utilities(serverUrl="http://localhost:8090/symphony/")
@@ -386,10 +386,16 @@ def general_test():
     response = utils.loadCircuitFromGraphString(key,jsoncontent)
     print(response)
 
+    response = utils.start(key)
+    print(response)
+
     response = utils.startFor(key, 1)
     print(response)
 
-    response = utils.startForAndWait(key, 3)
+    realt = float(json.loads(utils.time(key))["time"])
+    response = utils.startForAndWait(key, 10)
+    realt = float(json.loads(utils.time(key))["time"]) - realt
+    print("Waiting to equilibrate: SIM {} secs".format(realt))
     print(response)
 
     jsoncontens = json.dumps(json.load(open("/home/nifrick/IdeaProjects/CircuitSymphony/src/test/resources/transistor_b.json")))

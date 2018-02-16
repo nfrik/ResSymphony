@@ -161,8 +161,13 @@ def ttable_single_test(eq_time, inputids, item, jsonstr, outputids, utils):
                                         str(item[0] + (np.random.rand() - 0.5) / 3))
     response = utils.setElementProperty(key, str(inputids[1]), "maxVoltage",
                                         str(item[1] + (np.random.rand() - 0.5) / 3))
-    print("Waiting to equilibrate: {} secs".format(eq_time))
-    time.sleep(eq_time)
+    # print("Waiting to equilibrate: CPU {} secs".format(eq_time))
+    # realt=float(json.loads(utils.time(key))["time"])
+    # time.sleep(eq_time)
+    # realt=float(json.loads(utils.time(key))["time"])-realt
+    print("Waiting to equilibrate: SIM {} secs".format(eq_time))
+    utils.startForAndWait(key,eq_time)
+
     outvals = []
     for outid in outputids:
         response = utils.getCurrent(key, str(outid))
@@ -232,7 +237,7 @@ def main():
 
     param_grid = {'n':[20,30]}
 
-    args = {'k':4,'eq_time':2.5,'p':1.5,'nout':3}
+    args = {'k':4,'eq_time':0.05,'p':1.5,'nout':3}
     best_params, best_score, score_results = maximize(minimize_res, param_grid, args, verbose=True)
 
     print(best_params,best_score,score_results)
