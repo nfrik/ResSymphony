@@ -1,7 +1,8 @@
-from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import axes3d
 import matplotlib
-matplotlib.use('QT5Agg')
+# matplotlib.use('QT5Agg')
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 import numpy as np
 import json
 import networkx as nx
@@ -11,8 +12,7 @@ from sklearn.decomposition import PCA
 from sklearn.svm import SVC
 from sklearn.preprocessing import scale, normalize, minmax_scale, StandardScaler
 
-def plot3d(input,inputcirc=None):
-
+def plot3d(input,inputcirc=None,title=""):
 
     fig = plt.figure()
 
@@ -33,14 +33,27 @@ def plot3d(input,inputcirc=None):
 
     tmp = np.linspace(-1, 1, 10)
     xlg, ylg = np.meshgrid(tmp, tmp)
-    ax.plot_surface(xlg, ylg, zlr(xlg, ylg))
+    ax.plot_surface(xlg, ylg, zlr(xlg, ylg),color='yellow')
 
     ax.set_xlabel('X axis')
     ax.set_ylabel('Y axis')
     ax.set_zlabel('Z axis')
 
-    var = np.var(logreg.predict(X) - y)
-    ax.set_title("LogRegVar: {}".format(str(var)))
+    var = logreg.score(X,y)
+    ax.set_title("Score: {}".format(str(var)))
+
+    pca = PCA(n_components=3)
+    X_r = pca.fit(X).transform(X)
+    print(X_r)
+
+    ax2 = fig.add_subplot(231)
+    ax3 = fig.add_subplot(232)
+    ax4 = fig.add_subplot(233)
+    colors = ['red', 'blue']
+    for color, i in zip(colors, [-1., 1.]):
+        ax2.scatter(X_r[y == i, 0], X_r[y == i, 1], color=color)
+        ax3.scatter(X_r[y == i, 1], X_r[y == i, 2], color=color)
+        ax4.scatter(X_r[y == i, 2], X_r[y == i, 0], color=color)
 
     if inputcirc!=None:
         ax2 = fig.add_subplot(234)
@@ -50,27 +63,15 @@ def plot3d(input,inputcirc=None):
 
         pos = nx.spring_layout(G)
 
-        nx.draw(G, with_labels=True, ax=ax2, edgelist=edges, pos=pos, edge_color=colors, node_size=10, linewidth=5.,
-                font_size=8)
-
-        pca = PCA(n_components=3)
-        X_r = pca.fit(X).transform(X)
-
-        ax2 = fig.add_subplot(231)
-        ax3 = fig.add_subplot(232)
-        ax4 = fig.add_subplot(233)
-        colors = ['red', 'blue']
-        for color, i in zip(colors, [-1., 1.]):
-            ax2.scatter(X_r[y == i, 0], X_r[y == i, 1], color=color)
-            ax3.scatter(X_r[y == i, 1], X_r[y == i, 2], color=color)
-            ax4.scatter(X_r[y == i, 2], X_r[y == i, 0], color=color)
+        nx.draw(G, with_labels=False, ax=ax2, edgelist=edges, pos=pos, edge_color=colors, node_size=10, linewidth=5.,
+                font_size=8,title=title)
 
 
-
+    plt.savefig("aggregated.png")
     plt.show()
 
 
-def plot_json_graph(dictdata):
+def plot_json_graph(dictdata,imagepath=""):
 
     col_map, edgelist = json2edgelist(dictdata)
 
@@ -79,7 +80,11 @@ def plot_json_graph(dictdata):
     pos = nx.spring_layout(G)
 
     nx.draw(G, with_labels=True,edgelist=edges,pos=pos,edge_color=colors,node_size=10,linewidth=5.,font_size=8)
-    plt.show()
+
+    if imagepath!="":
+        plt.savefig(imagepath)
+    else:
+        plt.show()
 
 
 def edgelist2graph(col_map, edgelist):
@@ -105,12 +110,12 @@ def json2edgelist(dictdata):
 
 def main():
 
-    # a = [[-0.0034, -0.0001, -0.0001, 0.],
-    #      [-0.0001, -0., -0.0001, 1.],
-    #      [-0.0033, -0.0001, -0.0001, 1.],
-    #      [0., 0., 0.0001, 0.]]
-    #
-    # plot3d(a)
+    a = [[-0.0034, -0.0001, -0.0001, 0.],
+         [-0.0001, -0., -0.0001, 1.],
+         [-0.0033, -0.0001, -0.0001, 1.],
+         [0., 0., 0.0001, 0.]]
+
+    plot3d(a)
 
     with open(r'/home/nifrick/PycharmProjects/ResSymphony/results/n100_p0.045_k4_testxor_eqt0_5_date01-14-18-16_03_44_id35.json','r') as f:
         jdat=f.read()
@@ -118,3 +123,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

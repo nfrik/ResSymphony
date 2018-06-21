@@ -3,6 +3,10 @@ from utils import utilities
 import time
 import networktest
 import numpy as np
+from graph_tool.all import *
+import graph_tool as gt
+import matplotlib
+matplotlib.use('QT5Agg')
 
 def main():
     # dat = json.load(open("/home/nifrick/IdeaProjects/CircuitSymphony/src/test/resources/transistor_a.json"))
@@ -43,5 +47,12 @@ def main():
     # with open('test2.json','w') as json_file:
     #     json_file.write(jsonstr)
 
+def graph_tool_test():
+    g = lattice([2,2,2,2],periodic=False)
+    pos = sfdp_layout(g,cooling_step=0.95,epsilon=1e-2)
+    graph_draw(g,pos=pos, output_size=(300,300))
+
+
 if __name__ == "__main__":
     main()
+    # graph_tool_test()

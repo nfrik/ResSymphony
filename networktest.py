@@ -1,8 +1,10 @@
 from __future__ import print_function
 from utils import utilities
 from utils import plott
+from utils import nxgtutils as ngut
 import networkx as nx
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 import json
 import random
 import time
@@ -12,11 +14,26 @@ from evolutionary_search import maximize
 from pprint import pprint
 import multiprocessing as mp
 from itertools import repeat
+from sklearn.preprocessing import StandardScaler
+from graph_tool.all import lattice
+import pandas as pd
+
+df = pd.DataFrame(columns=['n_size', 'output_std', 'score','test','eq_time','minmax_volt'])
+
+seed=None
+
+DAT_MUL=10. #multiplier for input voltages
+DAT_DELTA=0.3 #multiplier for voltage variation
 
 ttables = {}
 ttables['xor'] = [[-1, -1, 0], [-1, 1, 1], [1, -1, 1], [1, 1, 0]]
 ttables['or'] = [[-1, -1, 0], [-1, 1, 1], [1, -1, 1], [1, 1, 0]]
 ttables['and'] = [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0]]
+
+for k in ttables.keys():
+    npt=np.array(ttables[k])
+    ttables[k]=np.stack((npt[:, 0] * DAT_MUL, npt[:, 1] * DAT_MUL, npt[:, 2])).T.tolist()
+
 
 np.set_printoptions(precision=4)
 np.set_printoptions(suppress=True)
@@ -25,13 +42,16 @@ def generate_random_net(n=20,p=2,k=4,net_type='ws'):
     # G = nx.complete_graph(10)
     # G = nx.fast_gnp_random_graph(n=n,p=p)
     if net_type =='ws':
-        G = nx.watts_strogatz_graph(n=n, k=k, p=p)
+        G = nx.watts_strogatz_graph(n=n, k=k, p=p,seed=seed)
     elif net_type == 'ba':
-        G = nx.barabasi_albert_graph(n=n,p=p)
+        G = nx.barabasi_albert_graph(n=n,p=p,seed=seed)
+    elif net_type == 'sq':
+        G = ngut.generate_lattice(n=n,dim=2,rmp=0.1,periodic=False)
 
-    print(G.edges())
-    # nx.draw(G, with_labels=True)
-    # plt.show()
+    print("Total edges generated",len(G.edges()))
+    nx.draw(G, with_labels=True)
+    # plt.savefig("graph.png")
+    plt.show()
     return G
 
 # def generate_random_net_circuit(n=20,p=2):
@@ -135,7 +155,6 @@ def truthtabletest(type='xor',circuit='',eq_time=0.5,iterations=1):
 
     ttable = list(ttables[type])
 
-
     results=[]
 
 
@@ -158,9 +177,11 @@ def ttable_single_test(eq_time, inputids, item, jsonstr, outputids, utils):
     inoutvals = {}
     print("Setting up inputs: ", item[:-1])
     response = utils.setElementProperty(key, str(inputids[0]), "maxVoltage",
-                                        str(item[0] + (np.random.rand() - 0.5) / 3))
+                                        str(item[0] * (1 + (np.random.rand() - 0.5) * DAT_DELTA))
+                                        )
     response = utils.setElementProperty(key, str(inputids[1]), "maxVoltage",
-                                        str(item[1] + (np.random.rand() - 0.5) / 3))
+                                        str(item[1] * (1 +(np.random.rand() - 0.5) * DAT_DELTA))
+                                        )
     # print("Waiting to equilibrate: CPU {} secs".format(eq_time))
     # realt=float(json.loads(utils.time(key))["time"])
     # time.sleep(eq_time)
@@ -172,7 +193,7 @@ def ttable_single_test(eq_time, inputids, item, jsonstr, outputids, utils):
     for outid in outputids:
         response = utils.getCurrent(key, str(outid))
         curval = json.loads(response)['value']
-        print("Output current vals: ", curval)
+        # print("Output current vals: ", curval)
         outvals.append(curval)
     utils.kill(key)
     outvals.append(item[2])
@@ -199,9 +220,8 @@ def ttt_launcher(ntests=1,n=30,p=2,k=4,nin=2,nout=5,eq_time=0.5, test_type='xor'
             results.append(res)
 
     if save_best:
-        logreg_results = logreg_test(results)
-        score = np.sum(np.abs(logreg_results))
-        if score < 1.:
+        log_var = logreg_test(results)
+        if log_var == 0.:
             jsonstr = inputcirc['circuit']
             with open('./results/' + 'n{}_p{}_k{}_test{}_eqt{}_date{}_id{}'.format(n, p, k, test_type, eq_time,
                                                                                    time.strftime("%m-%d-%y-%H_%M_%S"),
@@ -211,36 +231,70 @@ def ttt_launcher(ntests=1,n=30,p=2,k=4,nin=2,nout=5,eq_time=0.5, test_type='xor'
     return results, inputcirc['circuit']
 
 def logreg_test(results):
-    x = np.asarray(results)[:,:-1]
+    std_scaler = StandardScaler()
+    std_scaler.fit(results)
+    results = std_scaler.transform(results)
+    X = np.asarray(results)[:,:-1]
     y = np.asarray(results)[:,-1]
-    logreg = linear_model.LogisticRegression(C=.5)
-    logreg.fit(x,y)
+    logreg = linear_model.LogisticRegression(C=300.5, verbose=False, tol=1e-8, fit_intercept=True)
+    logreg.fit(X, y)
 
-    preddiff = []
-    for res in results:
-        preddiff.append(res[-1] - logreg.predict([res[:-1]]))
+    var = logreg.score(X,y)
 
-    return preddiff
+    return var
 
 def minimize_res(n,p,k,eq_time,nout):
     # results = ttt_launcher(ntests=1, n=80, p=0.1, k=4, nin=2, nout=6, eq_time=0.9)
     results,inputcirc = ttt_launcher(ntests=1, n=n, p=p, k=k, nin=2,
                                      nout=nout, eq_time=eq_time,save_best=True,
                                      test_type='xor',iterations=20,
-                                     el_type='m',rndmzd=True,net_type='ws')
+                                     el_type='m',rndmzd=True,net_type='sq')
     print(np.array(results).tolist())
-    logreg_results = logreg_test(results)
+    logreg_var = logreg_test(results)
+    output_var = np.mean(np.std(np.array(results)[:,:-1]))
+    print("Score: ",logreg_var)
+    print("Mean Output Variance: ", output_var)
     plott.plot3d(results,inputcirc)
-    return 10 - np.sum(np.abs(logreg_results))
+    # ['n_size', 'output_std', 'log_var', 'test', 'eq_time', 'minmax_volt']
+
+    df.loc[len(df)]=[n,output_var,logreg_var,'xor',eq_time,DAT_MUL]
+    df.to_csv("experiment_deleteme.csv")
+    return 100 - logreg_var
+
+def grid_main():
+    times=50
+    nn=range(20,55,5)
+    pp=[0.,0.01,0.02,0.04,0.1,0.2,0.4,0.8]
+    kk=[2,3,4,5,6]
+
+    dc=[]
+    eq_time=0.1
+    i=0
+    for t in range(times):
+        for n in nn:
+            for p in pp:
+                for k in kk:
+                    score = minimize_res(n=n,p=p,k=k,eq_time=eq_time,nout=3)
+                    i=i+1
+                    dc.append({'rep':t,'i':i,'n':n,'p':p,'k':k,'score':score})
+                    print("last measurement: ",dc[-1])
+    result = json.dumps(dc,sort_keys=True)
+
+    print(dc)
+    with open('./results/' + 'n{}_p{}_k{}_test{}_eqt{}_date{}'.
+            format(n, p, k, "xor", eq_time,time.strftime("%m-%d-%y-%H_%M_%S")) + '.json', 'w') as f:
+        f.write(result)
+
 
 def main():
 
-    param_grid = {'n':[20,30]}
+    param_grid = {'p':[0.1,0.2,0.4]}
 
-    args = {'k':4,'eq_time':0.05,'p':1.5,'nout':3}
-    best_params, best_score, score_results = maximize(minimize_res, param_grid, args, verbose=True)
+    args = {'n':10,'eq_time':0.04,'nout':3,'k':4}
+    score_results = maximize(minimize_res, param_grid, args, verbose=False, n_jobs=1)
 
-    print(best_params,best_score,score_results)
+    print(score_results)
+
 
     # jsonstr = json.load(open("/home/nifrick/IdeaProjects/CircuitSymphony/src/test/resources/transistor_a.json"))
 
@@ -278,4 +332,5 @@ def main():
 
 
 if __name__ == "__main__":
+    # grid_main()
     main()
