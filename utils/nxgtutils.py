@@ -1,5 +1,5 @@
 import networkx as nx
-import graph_tool as gt
+import graph_tool.all as gt
 import numpy as np
 from graph_tool.all import *
 

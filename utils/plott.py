@@ -1,8 +1,8 @@
 from mpl_toolkits.mplot3d import axes3d
 import matplotlib
-# matplotlib.use('QT5Agg')
+matplotlib.use('QT5Agg')
 import matplotlib.pyplot as plt
-plt.switch_backend('agg')
+# plt.switch_backend('agg')
 import numpy as np
 import json
 import networkx as nx

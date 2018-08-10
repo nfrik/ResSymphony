@@ -15,40 +15,50 @@ from itertools import repeat
 import configparser
 from utils import nxgtutils as ngut
 from sklearn.preprocessing import StandardScaler
+import logging
+from tqdm import tqdm_notebook
+from tqdm import tqdm
 
-DAT_DELTA=0.3 #multiplier for voltage variation
+DAT_DELTA = 0.03  # multiplier for voltage variation
+logger = logging.getLogger(__name__)
+
 
 class NetworkFitter():
-    def __init__(self, n_jobs=1,circuit='',eq_time=0.5,iterations=1):
+    def __init__(self, n_jobs=1, circuit='', eq_time=0.5, iterations=1):
         self.n_jobs = n_jobs
-        self.circuit=circuit
-        self.eq_time=eq_time
-        self.iterations=iterations
+        self.circuit = circuit
+        self.eq_time = eq_time
+        self.iterations = iterations
 
-
-        #read server path
+        # read server path
         cp = configparser.ConfigParser()
-        cp.read('../config/config.ini')
-        self.serverUrl = cp.get('ServerConfig','serverurl')
+        cp.read('/home/nifrick/PycharmProjects/ResSymphony/config/config.ini')
+        self.serverUrl = cp.get('ServerConfig', 'serverurl')
 
     def run_single_sim(self, X, y, inputids, outputids, jsonstr, eq_time, utils, perturb=False):
         response = utils.createNewSimulation()
-        print(response)
+        # print(response)
+        logger.debug(response)
         key = json.loads(response)["key"]
         response = utils.loadCircuitFromGraphString(key, jsonstr)
-        print(response)
-        utils.start(key)
+        # print(response)
+        logger.debug(response)
+        # utils.start(key)
         inoutvals = {}
-        print("Setting up inputs: ", X)
+        # print("Setting up inputs:", X, "for outputs:",y)
+        logger.debug("Setting up inputs: {} for outputs: {} ".format(X, y))
 
-        for inputid, idnum in zip(inputids,range(len(inputids))):
+        for inputid, idnum in zip(inputids, range(len(inputids))):
             response = utils.setElementProperty(key, str(inputid), "maxVoltage",
-                                                str(X[idnum]*(1 + perturb*(np.random.rand() - 0.5) * DAT_DELTA)))
+                                                str(X[idnum]))
 
-        print("Waiting to equilibrate: {} secs".format(eq_time))
+        # print("Waiting to equilibrate: {} secs".format(eq_time))
+        logger.info("Waiting to equilibrate: {} secs".format(eq_time))
         utils.startForAndWait(key, eq_time)
+        utils.stop(key)
         outvals = []
-        print("Done equilibrating, reading output values")
+        # print("Done equilibrating, reading output values")
+        logger.info("Done equilibrating, reading output values")
         for outid in outputids:
             response = utils.getCurrent(key, str(outid))
             curval = json.loads(response)['value']
@@ -58,9 +68,46 @@ class NetworkFitter():
         outvals.append(y)
         return outvals
 
-    def network_eval(self, X, y,circ="",n_jobs=0):
-        if circ!="":
-            self.circuit=circ
+    def run_single_sim_series(self, X, y, inputids, outputids, jsonstr, eq_time, utils, perturb=False, repeat=1):
+        response = utils.createNewSimulation()
+        # print(response)
+        logger.debug(response)
+        key = json.loads(response)["key"]
+        response = utils.loadCircuitFromGraphString(key, jsonstr)
+        # print(response)
+        logger.debug(response)
+        # utils.stop(key)
+        inoutvals = {}
+        outvals = {}
+        # print("Setting up inputs:", X, "for outputs:",y)
+        logger.debug("Setting up inputs: {} for outputs: {} ".format(X, y))
+        for k in tqdm(range(repeat)):
+            for inputid, idnum in zip(inputids, range(len(inputids))):
+                response = utils.setElementProperty(key, str(inputid), "maxVoltage",
+                                                    str(X[idnum]))
+                logger.debug("Setting value {}: for elemid: {}".format(X[idnum], idnum))
+
+            # print("Waiting to equilibrate: {} secs".format(eq_time))
+            logger.info("Waiting to equilibrate: {} secs".format(eq_time))
+            utils.startForAndWait(key, eq_time)
+            utils.stop(key)
+            # print("Done equilibrating, reading output values")
+            logger.info("Done equilibrating, reading output values")
+            outvals[k] = {}
+            for outid in outputids:
+                response = utils.peekCurrent(key, str(outid))
+                curval = json.loads(response)['value']
+                # print("Output current vals: ", curval)
+                outvals[k][outid] = curval
+                logger.debug("Reading value {}: for elemid: {}".format(curval, outid))
+
+        utils.kill(key)
+        # outvals.append(y)
+        return outvals
+
+    def network_eval(self, X, y, circ="", n_jobs=0):
+        if circ != "":
+            self.circuit = circ
         jsonstr = self.circuit['circuit']
         inputids = self.circuit['inputids']
         outputids = self.circuit['outputids']
@@ -70,7 +117,7 @@ class NetworkFitter():
         results = []
 
         if n_jobs == 0:
-            n_jobs=len(y)
+            n_jobs = len(y)
 
         with mp.pool.ThreadPool(processes=n_jobs) as pool:
             outvals = pool.starmap(self.run_single_sim,
@@ -84,16 +131,16 @@ class NetworkFitter():
         for outval in outvals:
             results.append(outval)
 
-
         return results
 
     def logreg_fit(self, X, y, rescale=False):
-        if rescale==True:
+        X = np.concatenate((X, y.reshape((-1, 1))), axis=1)
+        if rescale == True:
             std_scaler = StandardScaler()
             std_scaler.fit(X)
             X = std_scaler.transform(X)
-        x = np.asarray(X)
-        y = np.asarray(y)
+        x = np.asarray(X[:, :-1])
+        y = np.asarray(X[:, -1])
         logreg = linear_model.LogisticRegression(C=.5)
         logreg.fit(x, y)
 
@@ -101,9 +148,25 @@ class NetworkFitter():
         # for res in X:
         #     preddiff.append(y - logreg.predict([res]))
 
-        return logreg.score(X,y)
+        return logreg.score(X, y)
 
-    def generate_random_net(self, n=20, p=2, k=4, net_type='ws'):
+    def logreg_fit_mat(self, inmat, rescale=False):
+        if rescale:
+            std_scaler = StandardScaler()
+            std_scaler.fit(inmat)
+            inmat = std_scaler.transform(inmat)
+        X = np.array(inmat)[:, :-1]
+        y = np.array(inmat)[:, -1]
+        logreg = linear_model.LogisticRegression(C=300.5, verbose=True, tol=1e-8, fit_intercept=True)
+        logreg.fit(X, y)
+
+        # preddiff = []
+        # for res in X:
+        #     preddiff.append(y - logreg.predict([res]))
+
+        return logreg.score(X, y)
+
+    def generate_random_net(self, n=20, p=2, k=4, net_type='ws', plot=False):
         # G = nx.complete_graph(10)
         # G = nx.fast_gnp_random_graph(n=n,p=p)
         if net_type == 'ws':
@@ -113,17 +176,19 @@ class NetworkFitter():
         elif net_type == 'sq':
             G = ngut.generate_lattice(n=n, dim=2, rmp=0.1, periodic=False)
 
-        print("Total edges generated", len(G.edges()))
-        nx.draw(G, with_labels=True)
-        # plt.savefig("graph.png")
-        plt.show()
+        # print("Total edges generated", len(G.edges()))
+        logger.info("Total edges generated" + str(len(G.edges())))
+        if plot:
+            nx.draw(G, with_labels=True)
+            # plt.savefig("graph.png")
+            plt.show()
         return G
 
-    def generate_random_net_circuit(self,n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndmzd=False, net_type='ws'):
+    def generate_random_net_circuit(self, n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndmzd=False, net_type='ws'):
 
         # memristor base configuration
-        Ron = 100.
-        Roff = 32000.
+        Ron = 500.
+        Roff = 100000.
         dopwidth = 0.
         totwidth = 1.0E-8
         mobility = 1.0E-10
@@ -182,6 +247,12 @@ class NetworkFitter():
 
         return result
 
+
+def perturb_X(X, boost=3, var=1):
+    result = np.array(list(map(lambda t: boost * t + (np.random.rand() - 0.5) * var, X)))
+    return result
+
+
 def main():
     ttables = {}
     ttables['xor'] = [[-1, -1, 0], [-1, 1, 1], [1, -1, 1], [1, 1, 0]]
@@ -196,7 +267,6 @@ def main():
     # input['inputids']=inputids
     # input['outputids']=outputids
 
-
     ## input from file with inputs and outputs definitions
     # jsonstr = json.load(open("/home/nifrick/PycharmProjects/ResSymphony/n100_p0.045_k4_testxor_eqt0.5_date01-14-18-16_03_44_id35.json",'r'))
     #
@@ -205,27 +275,41 @@ def main():
     # input['inputids'] = [201,202]
     # input['outputids'] = [203,205,207,209,211,213,215,217]
 
-
     nf = NetworkFitter()
 
-    circ=nf.generate_random_net_circuit(n=30,nin=2,nout=3)
-    plott.plot_json_graph(circ['circuit'])
-    nf.circuit=circ
+    circ = nf.generate_random_net_circuit(n=30, nin=2, nout=3)
 
-    data=np.array(ttables['xor']*1)
-    X = data[:,:-1]
-    y = data[:,-1]
+    nf.circuit = circ
 
+    data = np.array(ttables['xor'] * 2)
+    X = data[:, :-1]
+    X = perturb_X(X, boost=2)
+    y = data[:, -1]
+    # plott.plot_json_graph(circ['circuit'])
+
+    start = time.time()
+    nf.eq_time = 0.1
     resx = nf.network_eval(X, y)
-    results = nf.logreg_fit(resx,y)
+    plott.plot3d(resx, circ['circuit'])
+    results = nf.logreg_fit(resx, y)
+    end = time.time() - start
 
-    print("Final result vector: ",np.sum(np.abs(results)))
+    print("Final result vector: ", np.sum(np.abs(results)))
+    print("Circuit size: ", len(json.loads(circ['circuit']).keys()))
+    print("Simulation time: ", end)
     return results
+
 
 def other_main():
     nf = NetworkFitter()
-    nf.circuit=nf.generate_random_net()
+    nf.circuit = nf.generate_random_net()
     print(nf.circuit)
+
+
+def get_logger():
+    global logger
+    return logger
+
 
 if __name__ == "__main__":
     # other_main()
