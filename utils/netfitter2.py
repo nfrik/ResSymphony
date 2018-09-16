@@ -32,7 +32,7 @@ class NetworkFitter():
 
         # read server path
         cp = configparser.ConfigParser()
-        cp.read('/home/nifrick/PycharmProjects/ResSymphony/config/config.ini')
+        cp.read('/home/nifrick/PycharmProjects/ressymphony/config/config.ini')
         self.serverUrl = cp.get('ServerConfig', 'serverurl')
 
     def run_single_sim(self, X, y, inputids, outputids, jsonstr, eq_time, utils, perturb=False):
@@ -295,7 +295,7 @@ def main():
     ttables['or'] = [[-1, -1, 0], [-1, 1, 1], [1, -1, 1], [1, 1, 0]]
     ttables['and'] = [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0]]
 
-    # jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ResSymphony/resources/test2_final.json")))
+    # jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ressymphony/resources/test2_final.json")))
     # inputids=[197,198]
     # outputids=[199,201,203,205]
     # input={}
@@ -304,7 +304,7 @@ def main():
     # input['outputids']=outputids
 
     ## input from file with inputs and outputs definitions
-    # jsonstr = json.load(open("/home/nifrick/PycharmProjects/ResSymphony/n100_p0.045_k4_testxor_eqt0.5_date01-14-18-16_03_44_id35.json",'r'))
+    # jsonstr = json.load(open("/home/nifrick/PycharmProjects/ressymphony/n100_p0.045_k4_testxor_eqt0.5_date01-14-18-16_03_44_id35.json",'r'))
     #
     # input={}
     # input['circuit'] = json.dumps(jsonstr)

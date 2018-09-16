@@ -329,7 +329,7 @@ def voltage_set_test():
     key = json.loads(response)["key"]
 
 
-    jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ResSymphony/resources/voltage_set_test.json")))
+    jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ressymphony/resources/voltage_set_test.json")))
     response = utils.loadCircuitFromGraphString(key, jsonstr)
     print(response)
 
@@ -357,7 +357,7 @@ def current_dynamic_test():
     print(response)
     key = json.loads(response)["key"]
 
-    jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ResSymphony/resources/current_dynamics_test.json")))
+    jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ressymphony/resources/current_dynamics_test.json")))
     response = utils.loadCircuitFromGraphString(key, jsonstr)
     print(response)
 

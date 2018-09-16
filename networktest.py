@@ -201,7 +201,7 @@ def ttable_single_test(eq_time, inputids, item, jsonstr, outputids, utils):
 
 
 def ttt_launcher(ntests=1,n=30,p=2,k=4,nin=2,nout=5,eq_time=0.5, test_type='xor', save_best=False,iterations=1,el_type='m',rndmzd=False,net_type='ws'):
-    # jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ResSymphony/resources/test2_final.json")))
+    # jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ressymphony/resources/test2_final.json")))
     # inputids=[197,198]
     # outputids=[199,201,203,205]
     # input={}
@@ -313,7 +313,7 @@ def main():
     # print(response)
     # key = json.loads(response)["key"]
     #
-    # jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ResSymphony/resources/delteme.json")))
+    # jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ressymphony/resources/delteme.json")))
     # response = utils.loadCircuitFromGraphString(key, jsonstr)
     # print(response)
     #

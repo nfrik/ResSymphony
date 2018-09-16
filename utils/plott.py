@@ -199,7 +199,7 @@ def main():
 
     plot3d(a)
 
-    with open(r'/home/nifrick/PycharmProjects/ResSymphony/results/n100_p0.045_k4_testxor_eqt0_5_date01-14-18-16_03_44_id35.json','r') as f:
+    with open(r'/home/nifrick/PycharmProjects/ressymphony/results/n100_p0.045_k4_testxor_eqt0_5_date01-14-18-16_03_44_id35.json','r') as f:
         jdat=f.read()
         plot_json_graph(jdat)
 

@@ -15,7 +15,7 @@ def main():
     # print(response)
     # key = json.loads(response)["key"]
 
-    # response = utils.loadCircuitFromGraphFile(key,"/home/nifrick/PycharmProjects/ResSymphony/results/n100_p0.045_k4_testxor_eqt0_5_date01-14-18-16_03_44_id35.json")
+    # response = utils.loadCircuitFromGraphFile(key,"/home/nifrick/PycharmProjects/ressymphony/results/n100_p0.045_k4_testxor_eqt0_5_date01-14-18-16_03_44_id35.json")
     # print(response)
     # utils.start(key)
     # print(utils.time(key))
@@ -23,7 +23,7 @@ def main():
     # print(utils.time(key))
     # utils.kill(key)
 
-    jsonstr = json.load(open("/home/nifrick/PycharmProjects/ResSymphony/n100_p0.045_k4_testxor_eqt0.5_date01-14-18-16_03_44_id35.json",'r'))
+    jsonstr = json.load(open("/home/nifrick/PycharmProjects/ressymphony/n100_p0.045_k4_testxor_eqt0.5_date01-14-18-16_03_44_id35.json",'r'))
 
     inputcirc={}
     inputcirc['circuit'] = json.dumps(jsonstr)
