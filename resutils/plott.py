@@ -1,6 +1,6 @@
 from mpl_toolkits.mplot3d import axes3d
 import matplotlib
-matplotlib.use('QT5Agg')
+# matplotlib.use('QT5Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 # plt.switch_backend('agg')
