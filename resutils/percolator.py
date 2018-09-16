@@ -154,139 +154,22 @@ class Percolator:
         return json.loads(response.text)
 
 
-    def generate_net(self,utils, clear=True, boxX=200, boxY=200, boxZ=200, cylD=2, cylDD=0, cylL=100, cylLD=0, cylN=600,
+    def generate_net(self, clear=True, boxX=200, boxY=200, boxZ=200, cylD=2, cylDD=0, cylL=100, cylLD=0, cylN=600,
                      proxF=0.5, cylChckBox=True, sphD=10, sphDD=1, sphN=10, sphChckBox=False, tag="", withAir=False,
                      threeD=True, steps=0):
         if clear:
-            utils.clear()
-        utils.generate_network(proxF=proxF, boxX=boxX, boxY=boxY, boxZ=boxZ, cylD=cylD, cylDD=cylDD, cylL=cylL, cylLD=cylLD,
+            self.clear()
+        self.generate_network(proxF=proxF, boxX=boxX, boxY=boxY, boxZ=boxZ, cylD=cylD, cylDD=cylDD, cylL=cylL, cylLD=cylLD,
                                cylN=cylN, cylChckBox=cylChckBox, sphD=sphD, sphDD=sphDD, sphN=sphN, sphChckBox=sphChckBox,
                                withAir=withAir, threeD=threeD, tag=tag, steps=steps)
-        utils.analyze(withAir=withAir)
-        network = utils.export_network()
+        self.analyze(withAir=withAir)
+        network = self.export_network()
         network['stat']
         network['stat']['aspect'] = cylL / cylD
         network['stat']['boxVol'] = boxX * boxY * boxZ
         network['stat']['cylN'] = cylN
         network['stat']
         return network
-
-    def network_create(self,attempts=5):
-        utils = Percolator(serverUrl=self.serverUrl);
-
-        net_len = 0
-
-        box, boy, boz = 1000, 1000, 25
-
-        network = self.generate_net(utils, clear=True, boxX=box, boxY=boy, boxZ=boz, cylD=0.2, cylL=70, cylN=20, proxF=0.01,
-                               threeD=False, sphChckBox=False, cylChckBox=True, tag='Wo3', steps=0)
-        # network = generate_net(resutils, clear=True, boxX=box, boxY=boy, boxZ=boz, proxF=0.01,
-        #                        threeD=False, sphChckBox=True, cylChckBox=False, sphD=25, sphDD=0, sphN=1500, tag='Wo3')
-        network = self.generate_net(utils, clear=False, boxX=box, boxY=boy, boxZ=boz, cylD=0.2, cylL=400, cylLD=0.2, cylN=150,
-                               proxF=0.01, threeD=False, sphChckBox=False, cylChckBox=True, tag='Ag', steps=0)
-
-        G = self.load_graph_from_json(network)
-
-        els1 = self.get_electrodes_rects([2, 1], gap=0.3)
-        els2 = self.get_electrodes_rects([3, 1], gap=0.3)
-        xmin, xmax, ymin, ymax, zmin, zmax = self.get_3d_minmax(G)
-        delta = 100
-        accepted_graphs = self.get_connected_graphs_electrodes(supergraph=G,delta=delta,elects1=els1,elects2=els2,box=box,boy=boy,boz=boz)
-        # accepted_graphs=get_connected_graphs(G,25)
-        # accepted_graphs
-
-
-
-
-        el1_nodes = self.get_nodes_for_electrode(elects=els1, pos=self.get_pos_for_subgraph(accepted_graphs[0],
-                                                                                  nx.get_node_attributes(G, 'pos3d')),
-                                            xmax=xmin + delta, xmin=xmin - delta, ymax=ymax, zmax=zmax)
-        el2_nodes = self.get_nodes_for_electrode(elects=els2, pos=self.get_pos_for_subgraph(accepted_graphs[0],
-                                                                                  nx.get_node_attributes(G, 'pos3d')),
-                                            xmax=xmax + delta, xmin=xmax - delta, ymax=ymax, zmax=zmax)
-
-        print(el1_nodes)
-        print(el2_nodes)
-
-        # plot_nxgraph(accepted_graphs[1],nx.get_node_attributes(accepted_graphs[1],'pos'))
-        graph = accepted_graphs[0]
-        title_str = "Edges: {}, TPVF: {:1.3f}, L/R: {}".format(len(graph.edges), network['stat']['TPVF'],
-                                                               network['stat']['aspect'])
-        # network['stat']['aspect']=cylL*2/cylD
-        # network['stat']['boxVol']=boxX*boxY*boxZ
-        # network['stat']['cylN']=cylN
-        ax = self.plot_pos3d(graph, title=title_str)
-        xmin, xmax, ymin, ymax, zmin, zmax = self.get_3d_minmax(graph)
-        self.plot_electrodes(xmax=xmin, ymax=ymax, zmax=zmax, ax=ax, els=els1, xdelta=delta)
-        self.plot_electrodes(xmax=xmax, ymax=ymax, zmax=zmax, ax=ax, els=els2, xdelta=delta)
-        # plot_pos3d(nx.get_node_attributes(accepted_graphs[1],'pos3d'))
-
-        # plot_nxgraph(G,nx.get_node_attributes(G,'pos'))
-
-        #GROOM GRAPH
-
-        edge_search_cutoff = 25
-        source_node = el1_nodes[0][0]  # source node on the electrode
-        dest_node = el2_nodes[0][0]  # destination node on the electrode
-        # constrained=convert_devices_to_resistors(accepted_graphs[0],min_length=2,ma)
-        wired_electrodes_graph = self.wire_nodes_on_electrodes(electrodeslist=[el1_nodes, el2_nodes],
-                                                          subgraph=accepted_graphs[0])
-
-        el_pan = []
-        for el_arr in [el1_nodes, el2_nodes]:
-            sub_el = []
-            for elk in el_arr.keys():
-                sub_el.append(el_arr[elk][0])
-            el_pan.append(sub_el)
-
-        comb_graph = wired_electrodes_graph
-        comb_graph = self.prune_dead_edges(wired_electrodes_graph, runs=25)
-        # comb_graph = convert_devices_to_resistors(comb_graph,min_length=0.00,max_length=50,in_range_dev='m',out_range_dev='r')
-        comb_graph = self.convert_edgeclass_to_device(comb_graph)
-
-        # print(G)
-        return comb_graph, el_pan
-
-    def network_groomer(self,accepted_graphs,els1,els2,el1_nodes,el2_nodes,xmin,xmax,ymin,ymax,zmin,zmax,delta):
-        edge_search_cutoff = 25
-        source_node = el1_nodes[0][0]  # source node on the electrode
-        dest_node = el2_nodes[0][0]  # destination node on the electrode
-        # constrained=convert_devices_to_resistors(accepted_graphs[0],min_length=2,ma)
-        wired_electrodes_graph = self.wire_nodes_on_electrodes(electrodeslist=[el1_nodes, el2_nodes],
-                                                          subgraph=accepted_graphs[0])
-
-        el_pan = []
-        for el_arr in [el1_nodes, el2_nodes]:
-            sub_el = []
-            for elk in el_arr.keys():
-                sub_el.append(el_arr[elk][0])
-            el_pan.append(sub_el)
-
-        # el_node_pairs = list(itertools.product(el_pan[0], el_pan[1]))
-        # for item in list(itertools.combinations(el_pan[0], 2)):
-        #     el_node_pairs.append(item)
-        # for item in list(itertools.combinations(el_pan[1], 2)):
-        #     el_node_pairs.append(item)
-        #
-        # s_graphs = []
-        # for node_pair in tqdm(el_node_pairs):
-        #     s_graphs.append(
-        #         get_simple_paths_graph_gtalg(G=wired_electrodes_graph, cutoff=edge_search_cutoff, start=node_pair[0],
-        #                                      end=node_pair[1]))
-        #
-        # comb_graph = nx.Graph()
-        # for s_graph in s_graphs:
-        #     comb_graph.add_nodes_from(s_graph.nodes(data=True))
-        #     comb_graph.add_edges_from(s_graph.edges(data=True))
-        #
-        # nx.set_edge_attributes(comb_graph, nx.get_edge_attributes(wired_electrodes_graph, 'edgetype'), 'edgetype')
-        # nx.set_node_attributes(comb_graph, nx.get_node_attributes(wired_electrodes_graph, 'pos'), 'pos')
-        # nx.set_node_attributes(comb_graph, nx.get_node_attributes(wired_electrodes_graph, 'pos3d'), 'pos3d')
-        #
-        # title_str = "Edges: {}".format(len(comb_graph.edges))
-        # ax = plot_pos3d(wired_electrodes_graph, title=title_str)
-        # plot_electrodes(xmax=xmin, ymax=ymax, zmax=zmax, ax=ax, els=els1, xdelta=delta)
-        # plot_electrodes(xmax=xmax, ymax=ymax, zmax=zmax, ax=ax, els=els2, xdelta=delta)
 
     def get_dataset(self,type='xor',periods=6,boost=1,var=0.0):
 
@@ -718,12 +601,129 @@ class Percolator:
             ret[i] = m[1][k]
         return ret
 
+def network_create(attempts=5):
+    percolator = Percolator(serverUrl="http://152.14.71.96:8096/percolator/");
+
+    net_len = 0
+
+    box, boy, boz = 1000, 1000, 25
+
+    network = percolator.generate_net(clear=True, boxX=box, boxY=boy, boxZ=boz, cylD=0.2, cylL=70, cylN=20, proxF=0.01,
+                           threeD=False, sphChckBox=False, cylChckBox=True, tag='Wo3', steps=0)
+    # network = generate_net(resutils, clear=True, boxX=box, boxY=boy, boxZ=boz, proxF=0.01,
+    #                        threeD=False, sphChckBox=True, cylChckBox=False, sphD=25, sphDD=0, sphN=1500, tag='Wo3')
+    network = percolator.generate_net(clear=False, boxX=box, boxY=boy, boxZ=boz, cylD=0.2, cylL=400, cylLD=0.2, cylN=150,
+                           proxF=0.01, threeD=False, sphChckBox=False, cylChckBox=True, tag='Ag', steps=0)
+
+    G = percolator.load_graph_from_json(network)
+
+    els1 = percolator.get_electrodes_rects([2, 1], gap=0.3)
+    els2 = percolator.get_electrodes_rects([3, 1], gap=0.3)
+    xmin, xmax, ymin, ymax, zmin, zmax = percolator.get_3d_minmax(G)
+    delta = 100
+    accepted_graphs = percolator.get_connected_graphs_electrodes(supergraph=G,delta=delta,elects1=els1,elects2=els2,box=box,boy=boy,boz=boz)
+    # accepted_graphs=get_connected_graphs(G,25)
+    # accepted_graphs
+
+
+
+
+    el1_nodes = percolator.get_nodes_for_electrode(elects=els1, pos=percolator.get_pos_for_subgraph(accepted_graphs[0],
+                                                                              nx.get_node_attributes(G, 'pos3d')),
+                                        xmax=xmin + delta, xmin=xmin - delta, ymax=ymax, zmax=zmax)
+    el2_nodes = percolator.get_nodes_for_electrode(elects=els2, pos=percolator.get_pos_for_subgraph(accepted_graphs[0],
+                                                                              nx.get_node_attributes(G, 'pos3d')),
+                                        xmax=xmax + delta, xmin=xmax - delta, ymax=ymax, zmax=zmax)
+
+    print(el1_nodes)
+    print(el2_nodes)
+
+    # plot_nxgraph(accepted_graphs[1],nx.get_node_attributes(accepted_graphs[1],'pos'))
+    graph = accepted_graphs[0]
+    title_str = "Edges: {}, TPVF: {:1.3f}, L/R: {}".format(len(graph.edges), network['stat']['TPVF'],
+                                                           network['stat']['aspect'])
+    # network['stat']['aspect']=cylL*2/cylD
+    # network['stat']['boxVol']=boxX*boxY*boxZ
+    # network['stat']['cylN']=cylN
+    ax = percolator.plot_pos3d(graph, title=title_str)
+    xmin, xmax, ymin, ymax, zmin, zmax = percolator.get_3d_minmax(graph)
+    percolator.plot_electrodes(xmax=xmin, ymax=ymax, zmax=zmax, ax=ax, els=els1, xdelta=delta)
+    percolator.plot_electrodes(xmax=xmax, ymax=ymax, zmax=zmax, ax=ax, els=els2, xdelta=delta)
+    # plot_pos3d(nx.get_node_attributes(accepted_graphs[1],'pos3d'))
+
+    # plot_nxgraph(G,nx.get_node_attributes(G,'pos'))
+
+    #GROOM GRAPH
+
+    edge_search_cutoff = 25
+    source_node = el1_nodes[0][0]  # source node on the electrode
+    dest_node = el2_nodes[0][0]  # destination node on the electrode
+    # constrained=convert_devices_to_resistors(accepted_graphs[0],min_length=2,ma)
+    wired_electrodes_graph = percolator.wire_nodes_on_electrodes(electrodeslist=[el1_nodes, el2_nodes],
+                                                      subgraph=accepted_graphs[0])
+
+    el_pan = []
+    for el_arr in [el1_nodes, el2_nodes]:
+        sub_el = []
+        for elk in el_arr.keys():
+            sub_el.append(el_arr[elk][0])
+        el_pan.append(sub_el)
+
+    comb_graph = wired_electrodes_graph
+    comb_graph = percolator.prune_dead_edges(wired_electrodes_graph, runs=25)
+    # comb_graph = convert_devices_to_resistors(comb_graph,min_length=0.00,max_length=50,in_range_dev='m',out_range_dev='r')
+    comb_graph = percolator.convert_edgeclass_to_device(comb_graph)
+
+    # print(G)
+    return comb_graph, el_pan
+
+def network_groomer(self,accepted_graphs,els1,els2,el1_nodes,el2_nodes,xmin,xmax,ymin,ymax,zmin,zmax,delta):
+    edge_search_cutoff = 25
+    source_node = el1_nodes[0][0]  # source node on the electrode
+    dest_node = el2_nodes[0][0]  # destination node on the electrode
+    # constrained=convert_devices_to_resistors(accepted_graphs[0],min_length=2,ma)
+    wired_electrodes_graph = self.wire_nodes_on_electrodes(electrodeslist=[el1_nodes, el2_nodes],
+                                                      subgraph=accepted_graphs[0])
+
+    el_pan = []
+    for el_arr in [el1_nodes, el2_nodes]:
+        sub_el = []
+        for elk in el_arr.keys():
+            sub_el.append(el_arr[elk][0])
+        el_pan.append(sub_el)
+
+    # el_node_pairs = list(itertools.product(el_pan[0], el_pan[1]))
+    # for item in list(itertools.combinations(el_pan[0], 2)):
+    #     el_node_pairs.append(item)
+    # for item in list(itertools.combinations(el_pan[1], 2)):
+    #     el_node_pairs.append(item)
+    #
+    # s_graphs = []
+    # for node_pair in tqdm(el_node_pairs):
+    #     s_graphs.append(
+    #         get_simple_paths_graph_gtalg(G=wired_electrodes_graph, cutoff=edge_search_cutoff, start=node_pair[0],
+    #                                      end=node_pair[1]))
+    #
+    # comb_graph = nx.Graph()
+    # for s_graph in s_graphs:
+    #     comb_graph.add_nodes_from(s_graph.nodes(data=True))
+    #     comb_graph.add_edges_from(s_graph.edges(data=True))
+    #
+    # nx.set_edge_attributes(comb_graph, nx.get_edge_attributes(wired_electrodes_graph, 'edgetype'), 'edgetype')
+    # nx.set_node_attributes(comb_graph, nx.get_node_attributes(wired_electrodes_graph, 'pos'), 'pos')
+    # nx.set_node_attributes(comb_graph, nx.get_node_attributes(wired_electrodes_graph, 'pos3d'), 'pos3d')
+    #
+    # title_str = "Edges: {}".format(len(comb_graph.edges))
+    # ax = plot_pos3d(wired_electrodes_graph, title=title_str)
+    # plot_electrodes(xmax=xmin, ymax=ymax, zmax=zmax, ax=ax, els=els1, xdelta=delta)
+    # plot_electrodes(xmax=xmax, ymax=ymax, zmax=zmax, ax=ax, els=els2, xdelta=delta)
+
 def main():
     percolator = Percolator(serverUrl="http://152.14.71.96:8096/percolator/")
     X, y = percolator.get_dataset(type='xor',periods=6,boost=10,var=0.5)
 
     # accepted_graphs,el1_nodes,el2_nodes = network_create()
-    comb_graph, el_pan = percolator.network_create()
+    comb_graph, el_pan = network_create()
     ax = percolator.plot_pos3d(comb_graph, title="test")
 
     ins = el_pan[0][:2]
