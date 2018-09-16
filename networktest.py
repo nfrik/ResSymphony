@@ -1,7 +1,7 @@
 from __future__ import print_function
-from utils import utilities
-from utils import plott
-from utils import nxgtutils as ngut
+from resutils import utilities
+from resutils import plott
+from resutils import nxgtutils as ngut
 import networkx as nx
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
@@ -183,9 +183,9 @@ def ttable_single_test(eq_time, inputids, item, jsonstr, outputids, utils):
                                         str(item[1] * (1 +(np.random.rand() - 0.5) * DAT_DELTA))
                                         )
     # print("Waiting to equilibrate: CPU {} secs".format(eq_time))
-    # realt=float(json.loads(utils.time(key))["time"])
+    # realt=float(json.loads(resutils.time(key))["time"])
     # time.sleep(eq_time)
-    # realt=float(json.loads(utils.time(key))["time"])-realt
+    # realt=float(json.loads(resutils.time(key))["time"])-realt
     print("Waiting to equilibrate: SIM {} secs".format(eq_time))
     utils.startForAndWait(key,eq_time)
 
@@ -299,7 +299,7 @@ def main():
     # jsonstr = json.load(open("/home/nifrick/IdeaProjects/CircuitSymphony/src/test/resources/transistor_a.json"))
 
     # dat = json.load(open("/home/nifrick/IdeaProjects/CircuitSymphony/src/test/resources/transistor_a.json"))
-    # utils = utilities.Utilities(serverUrl="http://localhost:8090/symphony/"
+    # resutils = utilities.Utilities(serverUrl="http://localhost:8090/symphony/"
 
     # result = generate_random_net_circuit(n=50,p=3,nin=2,nout=4)
     # jsonstr=result['circuit']
@@ -309,21 +309,21 @@ def main():
     #     json_file.write(jsonstr)
 
 
-    # response = utils.createNewSimulation()
+    # response = resutils.createNewSimulation()
     # print(response)
     # key = json.loads(response)["key"]
     #
     # jsonstr = json.dumps(json.load(open("/home/nifrick/PycharmProjects/ressymphony/resources/delteme.json")))
-    # response = utils.loadCircuitFromGraphString(key, jsonstr)
+    # response = resutils.loadCircuitFromGraphString(key, jsonstr)
     # print(response)
     #
-    # response = utils.getElementProperty(key, "1", "maxVoltage")
+    # response = resutils.getElementProperty(key, "1", "maxVoltage")
     # print(response)
     #
-    # response = utils.setElementProperty(key, "1", "maxVoltage", "100.5")
+    # response = resutils.setElementProperty(key, "1", "maxVoltage", "100.5")
     # print(response)
     #
-    # response = utils.getElementProperty(key, "1", "maxVoltage")
+    # response = resutils.getElementProperty(key, "1", "maxVoltage")
     # print(response)
 
 

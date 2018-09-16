@@ -1,9 +1,9 @@
 from __future__ import print_function
-from utils import plott
+from resutils import plott
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 import numpy as np
-from utils.netfitter import NetworkFitter
+from resutils.netfitter import NetworkFitter
 from sklearn.datasets import make_gaussian_quantiles
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler

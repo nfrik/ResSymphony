@@ -1,5 +1,5 @@
 import json
-from utils import utilities
+from resutils import utilities
 import time
 import networktest
 import numpy as np
@@ -10,18 +10,18 @@ matplotlib.use('QT5Agg')
 
 def main():
     # dat = json.load(open("/home/nifrick/IdeaProjects/CircuitSymphony/src/test/resources/transistor_a.json"))
-    # utils = utilities.Utilities(serverUrl="http://localhost:8090/symphony/")
-    # response = utils.createNewSimulation()
+    # resutils = utilities.Utilities(serverUrl="http://localhost:8090/symphony/")
+    # response = resutils.createNewSimulation()
     # print(response)
     # key = json.loads(response)["key"]
 
-    # response = utils.loadCircuitFromGraphFile(key,"/home/nifrick/PycharmProjects/ressymphony/results/n100_p0.045_k4_testxor_eqt0_5_date01-14-18-16_03_44_id35.json")
+    # response = resutils.loadCircuitFromGraphFile(key,"/home/nifrick/PycharmProjects/ressymphony/results/n100_p0.045_k4_testxor_eqt0_5_date01-14-18-16_03_44_id35.json")
     # print(response)
-    # utils.start(key)
-    # print(utils.time(key))
+    # resutils.start(key)
+    # print(resutils.time(key))
     # time.sleep(1.0)
-    # print(utils.time(key))
-    # utils.kill(key)
+    # print(resutils.time(key))
+    # resutils.kill(key)
 
     jsonstr = json.load(open("/home/nifrick/PycharmProjects/ressymphony/n100_p0.045_k4_testxor_eqt0.5_date01-14-18-16_03_44_id35.json",'r'))
 
