@@ -16,9 +16,15 @@ from tqdm import tqdm
 from utils.graph2json import *
 from utils import utilities
 from utils import netfitter2 as netfitter
+from scipy import signal
+
+import requests
+import json
+import time
 
 
-def load_graph_from_json_file(path='/home/nifrick/Documents/development/jupyter/networktest/spatial_percolation_data/16box_5.json'):
+def load_graph_from_json_file(
+        path='/home/nifrick/Documents/development/jupyter/networktest/spatial_percolation_data/16box_5.json'):
     with open(path) as f:
         data = json.load(f)
     graph = load_graph_from_json(data)
@@ -94,12 +100,10 @@ def wire_nodes_on_electrodes(subgraph, electrodeslist=[]):
     return subgraph
 
 
-# THIS METHOD PRODUCES INCORRECT GRAPH
 def convert_devices_to_resistors(graph, min_length=10, max_length=1e8, out_range_dev='m', in_range_dev='r'):
     #     graph_copy=nx.Graph()
     #     graph_copy.add_nodes_from(graph.nodes(data=True))
-    #     graph_copy.add_edges_from(graph.edges(data=True))
-
+    #     graph_copy.add_edges_from(s_graph.edges(data=True))
     graph_copy = graph.copy()
     pos3d = nx.get_node_attributes(graph_copy, 'pos3d')
     edges = graph_copy.edges()
@@ -116,13 +120,12 @@ def convert_devices_to_resistors(graph, min_length=10, max_length=1e8, out_range
 
 def convert_edgeclass_to_device(graph, mem='wo3', res='ag'):
     graph_copy = graph.copy()
-    pos3d = nx.get_node_attributes(graph_copy, 'pos3d')
     edges = graph_copy.edges()
     for e, v in nx.get_edge_attributes(graph_copy, 'edgeclass').items():
-        if mem in v.lower():
-            graph_copy[e[0]][e[1]]['edgeype'] = 'm'
-        elif res in v.lower():
-            graph_copy[e[0]][e[1]]['edgeype'] = 'r'
+        if mem.lower() in v.lower():
+            graph_copy[e[0]][e[1]]['edgetype'] = 'm'
+        elif res.lower() in v.lower():
+            graph_copy[e[0]][e[1]]['edgetype'] = 'r'
     return graph_copy
 
 
@@ -243,7 +246,7 @@ def get_nodes_within_3dboundary(pos, lowerbx, upperbx, lowerby, upperby, lowerbz
     return nodes
 
 
-def get_nodes_for_electrode(pos, elects, xmin, xmax,ymax,zmax):
+def get_nodes_for_electrode(pos, elects, xmin, xmax, ymax, zmax):
     elects_bucket = {}
     for k in elects.keys():
         y1, z1, h, w = elects[k][0], elects[k][1], elects[k][2], elects[k][3]
@@ -295,22 +298,16 @@ def get_3d_minmax(supergraph):
 
 
 # retrieves graphs connected to elects1 and elects2 - electrode arrays along x axis
-def get_connected_graphs_electrodes(supergraph, elects1, elects2, delta):
+def get_connected_graphs_electrodes(supergraph, elects1, elects2, delta, box, boy, boz):
     pos3d = nx.get_node_attributes(supergraph, 'pos3d')
     subgraphs = list(nx.connected_component_subgraphs(supergraph))
-    xmin, xmax, ymin, ymax, zmin, zmax = get_3d_minmax(supergraph)
-    #     xmin=min([k[0] for k in pos3d.values()])
-    #     xmax=max([k[0] for k in pos3d.values()])
-    #     ymin=min([k[1] for k in pos3d.values()])
-    #     ymax=max([k[1] for k in pos3d.values()])
-    #     zmin=min([k[2] for k in pos3d.values()])
-    #     zmax=max([k[2] for k in pos3d.values()])
+    #     xmin,xmax,ymin,ymax,zmin,zmax = get_3d_minmax(supergraph)
     accepted_graphs = []
     for sg in subgraphs:
         subpos = get_pos_for_subgraph(sg, pos3d)
 
-        elects1_bucket = get_nodes_for_electrode(pos=subpos, elects=elects1, xmin=xmin - delta, xmax=xmin + delta,ymax=ymax,zmax=zmax)
-        elects2_bucket = get_nodes_for_electrode(pos=subpos, elects=elects2, xmin=xmax - delta, xmax=xmax + delta,ymax=ymax,zmax=zmax)
+        elects1_bucket = get_nodes_for_electrode(subpos, elects1, 0 - delta, 0 + delta, boy, boz)
+        elects2_bucket = get_nodes_for_electrode(subpos, elects2, box - delta, boy + delta, boy, boz)
         for k in elects1_bucket.keys():
             elects1_bucket[k] = len(elects1_bucket[k])
         for k in elects2_bucket.keys():
@@ -387,10 +384,10 @@ def plot_pos3d(accepted_graph, ax=None, title=''):
         edgetype = {}
         try:
             edgetype = accepted_graph[e[0]][e[1]]['edgetype']
-            if edgetype == 'm':
-                ax.plot(x, y, z, c='r')
-            else:
+            if 'm' in edgetype:
                 ax.plot(x, y, z, c='b')
+            else:
+                ax.plot(x, y, z, c='k')
         except:
             ax.plot(x, y, z, c='k')
             pass
@@ -498,7 +495,8 @@ class Percolator:
                 "length": cylL,
                 "lengthDev": cylLD,
                 "number": cylN,
-                "sticky": False
+                "sticky": False,
+                "enabled": cylChckBox,
             },
             "drawMode": "LINE",
             "dumbbellCylinders": False,
@@ -518,7 +516,8 @@ class Percolator:
                 "diamDev": sphDD,
                 "diameter": sphD,
                 "number": sphN,
-                "sticky": False
+                "sticky": False,
+                "enabled": sphChckBox
             },
             "steps": steps,
             "tag": tag,
@@ -594,12 +593,13 @@ class Percolator:
         return json.loads(response.text)
 
 
-def generate_net(utils, clear=True, boxX=200, boxY=200, boxZ=200, cylD=2, cylL=100, cylN=600, proxF=0.5, cylChckBox=True,
-                 sphD=10, sphDD=1, sphN=10, sphChckBox=False, tag="", withAir=False, threeD=True, steps=0):
+def generate_net(utils, clear=True, boxX=200, boxY=200, boxZ=200, cylD=2, cylDD=0, cylL=100, cylLD=0, cylN=600,
+                 proxF=0.5, cylChckBox=True, sphD=10, sphDD=1, sphN=10, sphChckBox=False, tag="", withAir=False,
+                 threeD=True, steps=0):
     if clear:
         utils.clear()
-    utils.generate_network(proxF=proxF, boxX=boxX, boxY=boxY, boxZ=boxZ, cylD=cylD, cylL=cylL, cylN=cylN,
-                           cylChckBox=cylChckBox, sphD=sphD, sphDD=sphDD, sphN=sphN, sphChckBox=sphChckBox,
+    utils.generate_network(proxF=proxF, boxX=boxX, boxY=boxY, boxZ=boxZ, cylD=cylD, cylDD=cylDD, cylL=cylL, cylLD=cylLD,
+                           cylN=cylN, cylChckBox=cylChckBox, sphD=sphD, sphDD=sphDD, sphN=sphN, sphChckBox=sphChckBox,
                            withAir=withAir, threeD=threeD, tag=tag, steps=steps)
     utils.analyze(withAir=withAir)
     network = utils.export_network()
@@ -610,24 +610,32 @@ def generate_net(utils, clear=True, boxX=200, boxY=200, boxZ=200, cylD=2, cylL=1
     network['stat']
     return network
 
-def network_creator():
+def network_create(attempts=5):
     utils = Percolator(serverUrl="http://localhost:8096/percolator/");
 
-    # network = generate_net(utils, clear=True, boxX=1000, boxY=1000, boxZ=1, cylD=0.05, cylL=50, cylN=500, proxF=0.01,
-    #                        threeD=False, sphChckBox=True, cylChckBox=False, sphD=25, sphDD=0, sphN=1000, tag='Wo3')
+    net_len = 0
 
-    network = generate_net(utils, clear=True, boxX=1000, boxY=1000, boxZ=1, cylD=0.2, cylL=400, cylN=240, proxF=0.01,
-                           threeD=False, sphChckBox=False,cylChckBox=True,tag='Ag', steps=1)
+    box, boy, boz = 1000, 1000, 25
+
+    network = generate_net(utils, clear=True, boxX=box, boxY=boy, boxZ=boz, cylD=0.2, cylL=70, cylN=500, proxF=0.01,
+                           threeD=False, sphChckBox=False, cylChckBox=True, tag='Wo3', steps=0)
+    # network = generate_net(utils, clear=True, boxX=box, boxY=boy, boxZ=boz, proxF=0.01,
+    #                        threeD=False, sphChckBox=True, cylChckBox=False, sphD=25, sphDD=0, sphN=1500, tag='Wo3')
+    network = generate_net(utils, clear=False, boxX=box, boxY=boy, boxZ=boz, cylD=0.2, cylL=400, cylLD=0.2, cylN=150,
+                           proxF=0.01, threeD=False, sphChckBox=False, cylChckBox=True, tag='Ag', steps=0)
+
     G = load_graph_from_json(network)
 
     els1 = get_electrodes_rects([2, 1], gap=0.3)
     els2 = get_electrodes_rects([3, 1], gap=0.3)
     xmin, xmax, ymin, ymax, zmin, zmax = get_3d_minmax(G)
-    delta = 160
-    accepted_graphs = get_connected_graphs_electrodes(supergraph=G, delta=delta, elects1=els1, elects2=els2)
+    delta = 100
+    accepted_graphs = get_connected_graphs_electrodes(supergraph=G,delta=delta,elects1=els1,elects2=els2,box=box,boy=boy,boz=boz)
     # accepted_graphs=get_connected_graphs(G,25)
-    accepted_graphs
-    print("edges: " + str(len(accepted_graphs[0].edges())))
+    # accepted_graphs
+
+
+
 
     el1_nodes = get_nodes_for_electrode(elects=els1, pos=get_pos_for_subgraph(accepted_graphs[0],
                                                                               nx.get_node_attributes(G, 'pos3d')),
@@ -654,8 +662,29 @@ def network_creator():
 
     # plot_nxgraph(G,nx.get_node_attributes(G,'pos'))
 
-    print(G)
-    return accepted_graphs, el1_nodes, el2_nodes
+    #GROOM GRAPH
+
+    edge_search_cutoff = 25
+    source_node = el1_nodes[0][0]  # source node on the electrode
+    dest_node = el2_nodes[0][0]  # destination node on the electrode
+    # constrained=convert_devices_to_resistors(accepted_graphs[0],min_length=2,ma)
+    wired_electrodes_graph = wire_nodes_on_electrodes(electrodeslist=[el1_nodes, el2_nodes],
+                                                      subgraph=accepted_graphs[0])
+
+    el_pan = []
+    for el_arr in [el1_nodes, el2_nodes]:
+        sub_el = []
+        for elk in el_arr.keys():
+            sub_el.append(el_arr[elk][0])
+        el_pan.append(sub_el)
+
+    comb_graph = wired_electrodes_graph
+    comb_graph = prune_dead_edges(wired_electrodes_graph, runs=25)
+    # comb_graph = convert_devices_to_resistors(comb_graph,min_length=0.00,max_length=50,in_range_dev='m',out_range_dev='r')
+    comb_graph = convert_edgeclass_to_device(comb_graph)
+
+    # print(G)
+    return comb_graph, el_pan
 
 def network_groomer(accepted_graphs,els1,els2,el1_nodes,el2_nodes,xmin,xmax,ymin,ymax,zmin,zmax,delta):
     edge_search_cutoff = 25
@@ -672,68 +701,98 @@ def network_groomer(accepted_graphs,els1,els2,el1_nodes,el2_nodes,xmin,xmax,ymin
             sub_el.append(el_arr[elk][0])
         el_pan.append(sub_el)
 
-    el_node_pairs = list(itertools.product(el_pan[0], el_pan[1]))
-    for item in list(itertools.combinations(el_pan[0], 2)):
-        el_node_pairs.append(item)
-    for item in list(itertools.combinations(el_pan[1], 2)):
-        el_node_pairs.append(item)
+    # el_node_pairs = list(itertools.product(el_pan[0], el_pan[1]))
+    # for item in list(itertools.combinations(el_pan[0], 2)):
+    #     el_node_pairs.append(item)
+    # for item in list(itertools.combinations(el_pan[1], 2)):
+    #     el_node_pairs.append(item)
+    #
+    # s_graphs = []
+    # for node_pair in tqdm(el_node_pairs):
+    #     s_graphs.append(
+    #         get_simple_paths_graph_gtalg(G=wired_electrodes_graph, cutoff=edge_search_cutoff, start=node_pair[0],
+    #                                      end=node_pair[1]))
+    #
+    # comb_graph = nx.Graph()
+    # for s_graph in s_graphs:
+    #     comb_graph.add_nodes_from(s_graph.nodes(data=True))
+    #     comb_graph.add_edges_from(s_graph.edges(data=True))
+    #
+    # nx.set_edge_attributes(comb_graph, nx.get_edge_attributes(wired_electrodes_graph, 'edgetype'), 'edgetype')
+    # nx.set_node_attributes(comb_graph, nx.get_node_attributes(wired_electrodes_graph, 'pos'), 'pos')
+    # nx.set_node_attributes(comb_graph, nx.get_node_attributes(wired_electrodes_graph, 'pos3d'), 'pos3d')
+    #
+    # title_str = "Edges: {}".format(len(comb_graph.edges))
+    # ax = plot_pos3d(wired_electrodes_graph, title=title_str)
+    # plot_electrodes(xmax=xmin, ymax=ymax, zmax=zmax, ax=ax, els=els1, xdelta=delta)
+    # plot_electrodes(xmax=xmax, ymax=ymax, zmax=zmax, ax=ax, els=els2, xdelta=delta)
 
-    s_graphs = []
-    for node_pair in tqdm(el_node_pairs):
-        s_graphs.append(
-            get_simple_paths_graph_gtalg(G=wired_electrodes_graph, cutoff=edge_search_cutoff, start=node_pair[0],
-                                         end=node_pair[1]))
+def get_dataset(type='xor',periods=6,boost=1,var=0.0):
 
-    comb_graph = nx.Graph()
-    for s_graph in s_graphs:
-        comb_graph.add_nodes_from(s_graph.nodes(data=True))
-        comb_graph.add_edges_from(s_graph.edges(data=True))
+    ttables = {}
+    ttables['xor'] = [[-1, -1, 0], [-1, 1, 1], [1, -1, 1], [1, 1, 0]]
+    ttables['or'] = [[-1, -1, 0], [-1, 1, 1], [1, -1, 1], [1, 1, 0]]
+    ttables['and'] = [[0, 0, 0], [0, 1, 1], [1, 0, 1], [1, 1, 0]]
 
-    nx.set_edge_attributes(comb_graph, nx.get_edge_attributes(wired_electrodes_graph, 'edgetype'), 'edgetype')
-    nx.set_node_attributes(comb_graph, nx.get_node_attributes(wired_electrodes_graph, 'pos'), 'pos')
-    nx.set_node_attributes(comb_graph, nx.get_node_attributes(wired_electrodes_graph, 'pos3d'), 'pos3d')
+    data=np.array(ttables[type]*periods)
+    X = data[:,:-1]
+    y = data[:,-1]
+    #X,y = make_gaussian_quantiles(n_features=2, n_classes=2,  n_samples=20)
+    X = netfitter.perturb_X(X,boost=boost,var=var)
 
-    title_str = "Edges: {}".format(len(comb_graph.edges))
-    ax = plot_pos3d(wired_electrodes_graph, title=title_str)
-    plot_electrodes(xmax=xmin, ymax=ymax, zmax=zmax, ax=ax, els=els1, xdelta=delta)
-    plot_electrodes(xmax=xmax, ymax=ymax, zmax=zmax, ax=ax, els=els2, xdelta=delta)
+    return X,y
 
 def main():
-    accepted_graphs,el1_nodes,el2_nodes = network_creator()
 
-    el_pan = []
-    for el_arr in [el1_nodes, el2_nodes]:
-        sub_el = []
-        for elk in el_arr.keys():
-            sub_el.append(el_arr[elk][0])
-        el_pan.append(sub_el)
+    X, y = get_dataset(type='xor',periods=6,boost=10,var=0.5)
 
-    wired_electrodes_graph = wire_nodes_on_electrodes(electrodeslist=[el1_nodes, el2_nodes],
-                                                      subgraph=accepted_graphs[0])
-
-    wired_electrodes_graph = prune_dead_edges(wired_electrodes_graph,20)
+    # accepted_graphs,el1_nodes,el2_nodes = network_create()
+    comb_graph, el_pan =network_create()
+    ax = plot_pos3d(comb_graph, title="test")
 
     ins = el_pan[0][:2]
     outs = el_pan[1][:3]
     # Weird but you have to run this method twice to correctly apply conversions
-    comb_graph = wired_electrodes_graph
+    # comb_graph = wired_electrodes_graph
+    # comb_graph = prune_dead_edges(wired_electrodes_graph, runs=25)
     # comb_graph = convert_devices_to_resistors(comb_graph,min_length=0.00,max_length=6.0,in_range_dev='m',out_range_dev='r')
     mems = sum([v == 'm' for v in nx.get_edge_attributes(comb_graph, 'edgetype').values()])
     print("Total mems: ", mems)
     circ = transform_network_to_circuit(graph=comb_graph, inels=ins, outels=outs, t_step="5e-6", scale=1E-6)
 
-    nf=netfitter.NetworkFitter()
-    utils = utilities.Utilities(serverUrl=nf.serverUrl)
-    res = {}
-    for n in tqdm(range(3)):
-        nf = netfitter.NetworkFitter()
-        nf.eq_time = 0.005
-        circ = modify_integration_time(circ, set_val='8e-5')
-        nf.circuit = circ
-        res[n] = nf.run_single_sim_series([500., -500.], 0, circ['inputids'], circ['outputids'], circ['circuit'],
-                                          0.0001, utils, repeat=10)
+    # with open('/home/nifrick/Documents/development/jupyter/networktest/shortest_path_depth_analysis/circuit1_depth17_dd.json',
+    #         'r') as f:
+    #     circ=json.loads(json.load(f))
+    #
+    # ins=circ['inputids']
+    # outs=circ['outputids']
 
-    batch_plot_single_sim(res, title='mem 1.0 cutoff', num_elects=3)
+    # nf = netfitter.NetworkFitter()
+    # nf.eq_time = 0.01
+    # circ = modify_integration_time(circ, set_val='1e-5')
+    # nf.circuit = circ
+    # resx = nf.network_eval(X, y);
+    #
+    # nf=netfitter.NetworkFitter()
+    # utils = utilities.Utilities(serverUrl=nf.serverUrl)
+    # res = {}
+    # for n in tqdm(range(3)):
+    #     nf = netfitter.NetworkFitter()
+    #     nf.eq_time = 0.0001
+    #     circ = modify_integration_time(circ, set_val='1e-5')
+    #     nf.circuit = circ
+    #     res[n] = nf.run_single_sim_series([1500., -1500.], 0, circ['inputids'], circ['outputids'], circ['circuit'],
+    #                                       0.001, utils, repeat=150)
+    #
+    # t=np.linspace(0,1,40)
+    # # sig = signal.sawtooth(2*np.pi*4*t)
+    # sig = np.sin(2 * np.pi * 2 * t)
+    #
+    # X=np.hstack(((sig.reshape((-1, 1))+1)*0+100, -100+0*sig.reshape((-1, 1)),0*sig.reshape((-1, 1))))
+    #
+    # # res[0] = nf.run_continuous_sim(X,circ['inputids'],circ['outputids'],circ['circuit'],0.0005,utils)
+    #
+    # batch_plot_single_sim(res, title='mem 1.0 cutoff', num_elects=3)
 
 if __name__ == "__main__":
     main()

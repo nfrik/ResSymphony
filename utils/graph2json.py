@@ -5,9 +5,11 @@ import random
 import json
 import utils.nxgtutils as nxutils
 
-def transform_network_to_circuit(graph, inels, outels, t_step="5e-6", scale=1e-9, rndmzd=False):
+
+def transform_network_to_circuit(graph, inels, outels, t_step="5e-6", scale=1e-9):
     pos3d = nx.get_node_attributes(graph, 'pos3d')
     #     el_type='m'
+    rndmzd = False
     # memristor base configuration
 
     #     Ron = 500.
@@ -44,14 +46,15 @@ def transform_network_to_circuit(graph, inels, outels, t_step="5e-6", scale=1e-9
         if el_type == 'm':
             totwidth_rnd = totwidth + random.uniform(-totwidth / 5., totwidth / 5.)
             dopwidth_rnd = random.uniform(0., totwidth_rnd)
-            lst = ["m", e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth_rnd if rndmzd else dopwidth),
-                   str(totwidth_rnd if rndmzd else totwidth), str(mobility)]
+            lst = ["m", e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth if rndmzd else dopwidth_rnd),
+                   str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
         elif el_type == 'r':
             lst = ['r', e[0], e[1], 0, elemid, str(Ron)]
         elif el_type == 'd':
             lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
         doc[elemid] = lst
 
+    nodes = list(G.nodes)
 
     #     inoutnodes = random.sample(nodes, nin + nout)
 
@@ -64,7 +67,7 @@ def transform_network_to_circuit(graph, inels, outels, t_step="5e-6", scale=1e-9
         # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]1
         #         idk=random.choice(inels[k])
         idk = node
-        lst = ["R", idk, elemceil,  0, elemid, "0", "40.0", "0.0", "0.0", "0.0", "0.5"]
+        lst = ["R", idk, elemceil, 0, elemid, "0", "40.0", "0.0", "0.0", "0.0", "0.5"]
         doc[elemid] = lst
         inputids.append(elemid)
 
@@ -73,7 +76,7 @@ def transform_network_to_circuit(graph, inels, outels, t_step="5e-6", scale=1e-9
         elemceil -= 1
         #         idk=random.choice(outels[k])
         idk = node
-        lst = ["r", idk, elemceil,  0, elemid, str(drainres)]
+        lst = ["r", idk, elemceil, 0, elemid, str(drainres)]
         doc[elemid] = lst
         outputids.append(elemid)
 
@@ -135,14 +138,15 @@ def transform_network_to_circuit_plain(graph, inels, outels, t_step="5e-6", scal
         if el_type == 'm':
             totwidth_rnd = totwidth + random.uniform(-totwidth / 5., totwidth / 5.)
             dopwidth_rnd = random.uniform(0., totwidth_rnd)
-            lst = ["m", e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth_rnd if rndmzd else dopwidth),
-                   str(totwidth_rnd if rndmzd else totwidth), str(mobility)]
+            lst = ["m", e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth if rndmzd else dopwidth_rnd),
+                   str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
         elif el_type == 'r':
             lst = ['r', e[0], e[1], 0, elemid, str(Ron)]
         elif el_type == 'd':
             lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
         doc[elemid] = lst
 
+    nodes = list(G.nodes)
 
     #     inoutnodes = random.sample(nodes, nin + nout)
 
@@ -206,7 +210,7 @@ def generate_random_net_circuit(n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndm
             lst = ["m", ed[0], ed[1], 0, elemid, str(Ron), str(Roff), str(dopwidth if rndmzd else dopwidth_rnd),
                    str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
         elif el_type == 'd':
-            lst = ["d", ed[0], ed[1], 1, elemid, "0.805904"]
+            lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
         doc[elemid] = lst
 
     nodes = list(G.nodes)

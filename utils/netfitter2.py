@@ -1,6 +1,6 @@
 from __future__ import print_function
 from utils import utilities
-from utils import plott
+import utils.plott
 import networkx as nx
 import matplotlib.pyplot as plt
 import json
@@ -81,11 +81,10 @@ class NetworkFitter():
         outvals = {}
         # print("Setting up inputs:", X, "for outputs:",y)
         logger.debug("Setting up inputs: {} for outputs: {} ".format(X, y))
-        for k in tqdm(range(repeat)):
+        for k in range(repeat):
             for inputid, idnum in zip(inputids, range(len(inputids))):
                 response = utils.setElementProperty(key, str(inputid), "maxVoltage",
                                                     str(X[idnum]))
-                logger.debug("Setting value {}: for elemid: {}".format(X[idnum], idnum))
 
             # print("Waiting to equilibrate: {} secs".format(eq_time))
             logger.info("Waiting to equilibrate: {} secs".format(eq_time))
@@ -99,7 +98,41 @@ class NetworkFitter():
                 curval = json.loads(response)['value']
                 # print("Output current vals: ", curval)
                 outvals[k][outid] = curval
-                logger.debug("Reading value {}: for elemid: {}".format(curval, outid))
+
+        utils.kill(key)
+        # outvals.append(y)
+        return outvals
+
+    def run_continuous_sim(self, X, inputids, outputids, jsonstr, eq_time, utils):
+        response = utils.createNewSimulation()
+        # print(response)
+        logger.debug(response)
+        key = json.loads(response)["key"]
+        response = utils.loadCircuitFromGraphString(key, jsonstr)
+        # print(response)
+        logger.debug(response)
+        # utils.stop(key)
+        inoutvals = {}
+        outvals = {}
+        # print("Setting up inputs:", X, "for outputs:",y)
+        logger.debug("Setting up inputs: {}".format(X))
+        for k,X_row in tqdm(enumerate(X)):
+            for inputid, idnum in zip(inputids, range(len(inputids))):
+                response = utils.setElementProperty(key, str(inputid), "maxVoltage",
+                                                    str(X_row[idnum]))
+
+            # print("Waiting to equilibrate: {} secs".format(eq_time))
+            logger.info("Waiting to equilibrate: {} secs".format(eq_time))
+            utils.startForAndWait(key, eq_time)
+            utils.stop(key)
+            # print("Done equilibrating, reading output values")
+            logger.info("Done equilibrating, reading output values")
+            outvals[k] = {}
+            for outid in outputids:
+                response = utils.peekCurrent(key, str(outid))
+                curval = json.loads(response)['value']
+                # print("Output current vals: ", curval)
+                outvals[k][outid] = curval
 
         utils.kill(key)
         # outvals.append(y)
@@ -249,8 +282,11 @@ class NetworkFitter():
 
 
 def perturb_X(X, boost=3, var=1):
-    result = np.array(list(map(lambda t: boost * t + (np.random.rand() - 0.5) * var, X)))
-    return result
+    Y = X.copy()
+    for idx, x in np.ndenumerate(Y):
+        Y[idx] = x * boost + (np.random.rand() - 0.5) * var
+    #     result = np.array(list(map(lambda t: boost*t + (np.random.rand() - 0.5) * var, X)))
+    return Y
 
 
 def main():
@@ -277,20 +313,20 @@ def main():
 
     nf = NetworkFitter()
 
-    circ = nf.generate_random_net_circuit(n=30, nin=2, nout=3)
+    circ = nf.generate_random_net_circuit(n=50, nin=2, nout=3)
 
     nf.circuit = circ
 
-    data = np.array(ttables['xor'] * 2)
+    data = np.array(ttables['xor'] * 16)
     X = data[:, :-1]
-    X = perturb_X(X, boost=2)
+    X = perturb_X(X, boost=20, var=2)
     y = data[:, -1]
     # plott.plot_json_graph(circ['circuit'])
 
     start = time.time()
-    nf.eq_time = 0.1
+    nf.eq_time = 0.004
     resx = nf.network_eval(X, y)
-    plott.plot3d(resx, circ['circuit'])
+    utils.plott.plot3d(resx, circ['circuit'])
     results = nf.logreg_fit(resx, y)
     end = time.time() - start
 
@@ -304,11 +340,6 @@ def other_main():
     nf = NetworkFitter()
     nf.circuit = nf.generate_random_net()
     print(nf.circuit)
-
-
-def get_logger():
-    global logger
-    return logger
 
 
 if __name__ == "__main__":
