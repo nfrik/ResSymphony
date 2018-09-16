@@ -54,7 +54,7 @@ def transform_network_to_circuit(graph, inels, outels, t_step="5e-6", scale=1e-9
             lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
         doc[elemid] = lst
 
-    nodes = list(G.nodes)
+    # nodes = list(G.nodes)
 
     #     inoutnodes = random.sample(nodes, nin + nout)
 

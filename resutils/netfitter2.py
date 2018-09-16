@@ -24,16 +24,19 @@ logger = logging.getLogger(__name__)
 
 
 class NetworkFitter():
-    def __init__(self, n_jobs=1, circuit='', eq_time=0.5, iterations=1):
+    def __init__(self, n_jobs=1, circuit='', eq_time=0.5, iterations=1,serverUrl=''):
         self.n_jobs = n_jobs
         self.circuit = circuit
         self.eq_time = eq_time
         self.iterations = iterations
 
         # read server path
-        cp = configparser.ConfigParser()
-        cp.read('/home/nifrick/PycharmProjects/ressymphony/config/config.ini')
-        self.serverUrl = cp.get('ServerConfig', 'serverurl')
+        if serverUrl=='':
+            cp = configparser.ConfigParser()
+            cp.read('/home/nifrick/PycharmProjects/ressymphony/config/config.ini')
+            self.serverUrl = cp.get('ServerConfig', 'serverurl')
+        else:
+            self.serverUrl = serverUrl
 
     def run_single_sim(self, X, y, inputids, outputids, jsonstr, eq_time, utils, perturb=False):
         response = utils.createNewSimulation()
