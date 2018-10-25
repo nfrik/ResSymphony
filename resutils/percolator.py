@@ -608,7 +608,7 @@ def network_create(attempts=5):
 
     box, boy, boz = 1000, 1000, 25
 
-    network = percolator.generate_net(clear=True, boxX=box, boxY=boy, boxZ=boz, cylD=0.2, cylL=70, cylN=20, proxF=0.01,
+    network = percolator.generate_net(clear=True, boxX=box, boxY=boy, boxZ=boz, cylD=0.2, cylL=70, cylN=300, proxF=0.01,
                            threeD=False, sphChckBox=False, cylChckBox=True, tag='Wo3', steps=0)
     # network = generate_net(resutils, clear=True, boxX=box, boxY=boy, boxZ=boz, proxF=0.01,
     #                        threeD=False, sphChckBox=True, cylChckBox=False, sphD=25, sphDD=0, sphN=1500, tag='Wo3')
