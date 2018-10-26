@@ -1,6 +1,6 @@
 from setuptools import setup
 
-setup(name='ressymphony',
+setup(name='resutils',
       version='0.1.3c',
       description='Controller for CircuitSymphony - distributed SPICE',
       url='https://github.com/nfrik/ResSymphony',
@@ -8,4 +8,7 @@ setup(name='ressymphony',
       author_email='nvfrik@ncsu.edu',
       license='MIT',
       packages=['resutils'],
+      install_requires=[
+          'tqdm',
+      ],
       zip_safe=False)
