@@ -17,119 +17,119 @@ from resutils.graph2json import *
 from resutils import utilities
 from resutils import netfitter2 as netfitter
 from scipy import signal
+from posixpath import join as urljoin
 
 import requests
 import json
 import time
 
-
 class Percolator:
-    serverUrl = ""
+    serverUrl_uuid = ""
+    serverUrl=""
 
     def __init__(self, serverUrl):
         Percolator.serverUrl = serverUrl
+        Percolator.serverUrl_uuid = urljoin(serverUrl, "{uuid}/")
+        # Percolator.serverUrl_uuid = serverUrl+"uuid/"
 
-    def generate_network_native(self, data):
-        url = Percolator.serverUrl + 'generate'
+    def get_default_config(self):
+        defconfig = {
+            "cylinder": {
+                "angleDev": 0,
+                "angleX": 0,
+                "angleZ": 0,
+                "diamDev": 0,
+                "diameter": 0,
+                "enabled": False,
+                "length": 0,
+                "lengthDev": 0,
+                "number": 0,
+                "sticky": False
+            },
+            "dumbbell": {
+                "angleDev": 0,
+                "angleX": 0,
+                "angleZ": 0,
+                "diamDev": 0,
+                "diameter": 0,
+                "enabled": False,
+                "length": 0,
+                "lengthDev": 0,
+                "number": 0,
+                "sticky": False
+            },
+            "simulation": {
+                "boxDimensionX": 0,
+                "boxDimensionY": 0,
+                "boxDimensionZ": 0,
+                "cfm": 0,
+                "is3D": False,
+                "proximity": 2,
+                "seed": 0,
+                "steps": 0,
+                "tag": "string",
+                "withAir": False
+            },
+            "spaghetti": {
+                "angleDev": 0,
+                "angleX": 0,
+                "angleZ": 0,
+                "diamDev": 0,
+                "diameter": 0,
+                "enabled": False,
+                "length": 0,
+                "lengthDev": 0,
+                "number": 0,
+                "numberOfSegments": 0,
+                "sticky": False
+            },
+            "sphere": {
+                "angleDev": 0,
+                "angleX": 0,
+                "angleZ": 0,
+                "diamDev": 0,
+                "diameter": 0,
+                "enabled": False,
+                "number": 0,
+                "sticky": False
+            },
+            "visualization": {
+                "drawMode": "LINE",
+                "highlightContactedObjects": False,
+                "polygonsNumber": 0,
+                "proximitySphere": False,
+                "showAABB": False,
+                "showAxes": False,
+                "showBox": False,
+                "showContacts": False,
+                "showObjects": False
+            }
+        }
+
+        return defconfig
+
+    def generate_network_native(self, key,data):
+        url = Percolator.serverUrl_uuid + 'generate'
+        payload = {'uuid': key}
         headers = {
             'Content-Type': 'application/json',
             'Accept': '*/*',
         }
         data = json.dumps(data)
-        response = requests.request("POST", url, data=data, headers=headers)
+        response = requests.request("POST", url, data=data, headers=headers,params=payload)
         return json.loads(json.dumps(response.text))
 
-    def generate_network(self, boxX=100, boxY=100, boxZ=100, proxF=1, \
-                         cylChckBox=True, cylD=2, cylDD=1, cylL=30, cylLD=1, cylN=100, \
-                         sphChckBox=True, sphD=10, sphDD=1, sphN=10, CFM=0, withAir=False, tag="", threeD=True,
-                         steps=0):
-        data = {
-            "addCylinders": cylChckBox,
-            "addSpheres": sphChckBox,
-            "boxDimensionX": boxX,
-            "boxDimensionY": boxY,
-            "boxDimensionZ": boxZ,
-            "cfm": CFM,
-            "cylindersSettings": {
-                "diamDev": cylDD,
-                "diameter": cylD,
-                "length": cylL,
-                "lengthDev": cylLD,
-                "number": cylN,
-                "sticky": False,
-                "enabled": cylChckBox,
-            },
-            "drawMode": "LINE",
-            "dumbbellCylinders": False,
-            "highlightContactedObjects": False,
-            "polygonsNumber": 5,
-            "proximity": proxF,
-            "proximitySphere": True,
-            "randomCylinderLength": 0,
-            "randomCylinderRadius": 0,
-            "randomSphereRadius": 0,
-            "showAABB": False,
-            "showAxes": False,
-            "showBox": False,
-            "showContacts": False,
-            "showObjects": False,
-            "spheresSettings": {
-                "diamDev": sphDD,
-                "diameter": sphD,
-                "number": sphN,
-                "sticky": False,
-                "enabled": sphChckBox
-            },
-            "steps": steps,
-            "tag": tag,
-            "withAir": withAir,
-            "threeD": threeD
-        }
-        #         data={
-        #           "aabbCheckBoxSelected": True,
-        #           "axesCheckBoxSelected": True,
-        #           "boxCheckBoxSelected": True,
-        #           "boxDimensionXField": boxX,
-        #           "boxDimensionYField": boxY,
-        #           "boxDimensionZField": boxZ,
-        #           "cfm": CFM,
-        #           "contactsCheckBoxSelected": True,
-        #           "cylindersCheckBoxSelected": cylChckBox,
-        #           "cylindersDiamDevField": cylDD,
-        #           "cylindersDiameterField": cylD,
-        #           "cylindersLengthDevField": cylLD,
-        #           "cylindersLengthField": cylL,
-        #           "cylindersNumberField": cylN,
-        #           "drawModeComboBox": "LINE",
-        #           "highlightContactedObjectCheckBoxSelected": True,
-        #           "objectsCheckBoxSelected": True,
-        #           "polygonsNumberField": 0,
-        #           "proximityField": proxF,
-        #           "proximitySphereCheckBoxSelected": True,
-        #           "randomCylinderDiameter": 0,
-        #           "randomCylinderLength": 0,
-        #           "randomSphereDiameter": 0,
-        #           "spheresCheckBoxSelected": sphChckBox,
-        #           "spheresDiamDevField": sphDD,
-        #           "spheresDiameterField": sphD,
-        #           "spheresNumberField": sphN,
-        #           "withAir": withAir,
-        #         }
-        response = Percolator.generate_network_native(self, data)
-        return response
-
-    def analyze(self, withAir=False):
-        url = Percolator.serverUrl + 'analyze'
-        payload = {'withAir': str(withAir).lower()}
+    def create(self):
+        url = urljoin(Percolator.serverUrl, 'create')
         headers = {
             'Content-Type': 'application/json',
             'Accept': '*/*',
         }
-        response = requests.request("POST", url, headers=headers, params=payload)
-        return json.loads(json.dumps(response.text))
+        response = requests.request("POST", url, headers=headers)
+        return json.loads(json.dumps(response.text))[1:-1]
 
-    def clear(self):
-        url = Percolator.serverUrl + 'clear'
+    def list_uuids(self):
+        url = urljoin(Percolator.serverUrl, 'uuids')
         headers = {
             'Content-Type': 'application/json',
             'Accept': '*/*',
@@ -137,37 +137,158 @@ class Percolator:
         response = requests.request("POST", url, headers=headers)
         return json.loads(json.dumps(response.text))
 
-    def export_scene(self):
-        url = Percolator.serverUrl + 'export'
+    def delete(self, key):
+        url = urljoin(Percolator.serverUrl_uuid, 'analyze')
+        payload = {'uuid':key}
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': '*/*',
+        }
+        response = requests.request("POST", url, headers=headers, params=payload)
+        return json.loads(json.dumps(response.text))
+
+    # def generate_network(self, boxX=100, boxY=100, boxZ=100, proxF=1, \
+    #                      cylChckBox=True, cylD=2, cylDD=1, cylL=30, cylLD=1, cylN=100, \
+    #                      sphChckBox=True, sphD=10, sphDD=1, sphN=10, CFM=0, withAir=False, tag="", threeD=True,
+    #                      steps=0):
+    def generate_network(self, key, **data):
+        # data = {
+        #     "addCylinders": cylChckBox,
+        #     "addSpheres": sphChckBox,
+        #     "boxDimensionX": boxX,
+        #     "boxDimensionY": boxY,
+        #     "boxDimensionZ": boxZ,
+        #     "cfm": CFM,
+        #     "cylindersSettings": {
+        #         "diamDev": cylDD,
+        #         "diameter": cylD,
+        #         "length": cylL,
+        #         "lengthDev": cylLD,
+        #         "number": cylN,
+        #         "sticky": False,
+        #         "enabled": cylChckBox,
+        #     },
+        #     "drawMode": "LINE",
+        #     "dumbbellCylinders": False,
+        #     "highlightContactedObjects": False,
+        #     "polygonsNumber": 5,
+        #     "proximity": proxF,
+        #     "proximitySphere": True,
+        #     "randomCylinderLength": 0,
+        #     "randomCylinderRadius": 0,
+        #     "randomSphereRadius": 0,
+        #     "showAABB": False,
+        #     "showAxes": False,
+        #     "showBox": False,
+        #     "showContacts": False,
+        #     "showObjects": False,
+        #     "spheresSettings": {
+        #         "diamDev": sphDD,
+        #         "diameter": sphD,
+        #         "number": sphN,
+        #         "sticky": False,
+        #         "enabled": sphChckBox
+        #     },
+        #     "steps": steps,
+        #     "tag": tag,
+        #     "withAir": withAir,
+        #     "threeD": threeD
+        # }
+
+        response = Percolator.generate_network_native(self, key, data)
+        return response
+
+    def analyze(self, key,withAir=False):
+        url = urljoin(Percolator.serverUrl_uuid, 'analyze')
+        payload = {'withAir': str(withAir).lower(),'uuid':key}
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': '*/*',
+        }
+        response = requests.request("POST", url, headers=headers, params=payload)
+        return json.loads(json.dumps(response.text))
+
+    def clear(self,key):
+        url = urljoin(Percolator.serverUrl_uuid, 'clear')
+        payload = {'uuid': key}
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': '*/*',
+        }
+        response = requests.request("POST", url, headers=headers,params=payload)
+        return json.loads(json.dumps(response.text))
+
+    def export_scene(self,key):
+        url = urljoin(Percolator.serverUrl_uuid, 'export')
+        payload = {'uuid': key}
         headers = {
             'Accept': 'text/plain',
         }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers,params=payload)
         return json.loads(response.text)
 
-    def export_network(self):
-        url = Percolator.serverUrl + 'export-network'
+    def export_network(self,key):
+        url = urljoin(Percolator.serverUrl_uuid, 'export-network')
+        payload = {'uuid': key}
         headers = {
             'Accept': 'text/plain',
         }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers,params=payload)
         return json.loads(response.text)
 
+    def import_net(self,key,data):
+        url = Percolator.serverUrl_uuid + 'import'
+        payload = {'uuid': key}
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': '*/*',
+        }
+        data = json.dumps(data)
+        response = requests.request("POST", url, data=data, headers=headers,params=payload)
+        return json.loads(json.dumps(response.text))
 
-    def generate_net(self, clear=True, boxX=200, boxY=200, boxZ=200, cylD=2, cylDD=0, cylL=100, cylLD=0, cylN=600,
-                     proxF=0.5, cylChckBox=True, sphD=10, sphDD=1, sphN=10, sphChckBox=False, tag="", withAir=False,
-                     threeD=True, steps=0):
-        if clear:
-            self.clear()
-        self.generate_network(proxF=proxF, boxX=boxX, boxY=boxY, boxZ=boxZ, cylD=cylD, cylDD=cylDD, cylL=cylL, cylLD=cylLD,
-                               cylN=cylN, cylChckBox=cylChckBox, sphD=sphD, sphDD=sphDD, sphN=sphN, sphChckBox=sphChckBox,
-                               withAir=withAir, threeD=threeD, tag=tag, steps=steps)
-        self.analyze(withAir=withAir)
-        network = self.export_network()
+    def get_settings(self,key):
+        url = urljoin(Percolator.serverUrl_uuid, 'settings')
+        payload = {'uuid': key}
+        # headers = {
+        #     'Accept': 'text/plain',
+        # }
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': '*/*',
+        }
+        response = requests.get(url, headers=headers,params=payload)
+        return json.loads(json.dumps(response.text))
+
+
+    # def generate_net(self, key,clear=True, boxX=200, boxY=200, boxZ=200, cylD=2, cylDD=0, cylL=100, cylLD=0, cylN=600,
+    #                  proxF=0.5, cylChckBox=True, sphD=10, sphDD=1, sphN=10, sphChckBox=False, tag="", withAir=False,
+    #                  threeD=True, steps=0):
+    #     if clear:
+    #         self.clear()
+    #     self.generate_network(proxF=proxF, boxX=boxX, boxY=boxY, boxZ=boxZ, cylD=cylD, cylDD=cylDD, cylL=cylL, cylLD=cylLD,
+    #                            cylN=cylN, cylChckBox=cylChckBox, sphD=sphD, sphDD=sphDD, sphN=sphN, sphChckBox=sphChckBox,
+    #                            withAir=withAir, threeD=threeD, tag=tag, steps=steps)
+    #     self.analyze(key=key,withAir=withAir)
+    #     network = self.export_network(key)
+    #     network['stat']
+    #     network['stat']['aspect'] = cylL / cylD
+    #     network['stat']['boxVol'] = boxX * boxY * boxZ
+    #     network['stat']['cylN'] = cylN
+    #     network['stat']
+    #     return network
+
+
+    def generate_net(self,key, **data):
+        # if clear:
+        #     self.clear()
+        self.generate_network(key=key,**data)
+        self.analyze(key=key,withAir=data['simulation']['withAir'])
+        network = self.export_network(key)
         network['stat']
-        network['stat']['aspect'] = cylL / cylD
-        network['stat']['boxVol'] = boxX * boxY * boxZ
-        network['stat']['cylN'] = cylN
+        network['stat']['aspect'] = data['cylinder']['length'] / data['cylinder']['diameter']
+        network['stat']['boxVol'] = data['simulation']['boxDimensionX'] * data['simulation']['boxDimensionY'] * data['simulation']['boxDimensionZ']
+        network['stat']['cylN'] = data['cylinder']['number']
         network['stat']
         return network
 
@@ -600,6 +721,8 @@ class Percolator:
         for k, i in zip(m[1].keys(), range(len(m[1].keys()))):
             ret[i] = m[1][k]
         return ret
+
+
 
 def network_create(attempts=5):
     percolator = Percolator(serverUrl="http://152.14.71.96:8096/percolator/");

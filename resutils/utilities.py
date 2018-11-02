@@ -4,7 +4,6 @@ import requests
 import json
 import time
 
-
 class Utilities:
 
     serverUrl = ""
