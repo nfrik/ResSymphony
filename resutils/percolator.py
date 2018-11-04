@@ -62,6 +62,21 @@ class Percolator:
                 "boxDimensionX": 0,
                 "boxDimensionY": 0,
                 "boxDimensionZ": 0,
+                "boxPositionX": 0,
+                "boxPositionY": 0,
+                "boxPositionZ": 0,
+                # "boxDimension":{
+                #     "x":100,
+                #     "y":100,
+                #     "z":100
+                # },
+                # "boxPosition": {
+                #     "x": 0,
+                #     "y": 0,
+                #     "z": 0
+                # },
+                "boxAngleX":0,
+                "boxAngleY":0,
                 "cfm": 0,
                 "is3D": False,
                 "proximity": 2,
@@ -138,7 +153,7 @@ class Percolator:
         return json.loads(json.dumps(response.text))
 
     def delete(self, key):
-        url = urljoin(Percolator.serverUrl_uuid, 'analyze')
+        url = urljoin(Percolator.serverUrl_uuid, 'delete')
         payload = {'uuid':key}
         headers = {
             'Content-Type': 'application/json',

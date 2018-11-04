@@ -9,7 +9,7 @@ import json
 #         self.assertEqual(len(json.loads(perc.create()).items()),1)
 
 def main():
-    perc = percolator.Percolator(serverUrl="http://152.14.71.96:15849/percolator/")
+    perc = percolator.Percolator(serverUrl="http://152.14.71.96:15850/percolator/")
 
     datac=perc.get_default_config()
     key1=perc.create()
@@ -21,6 +21,12 @@ def main():
     datac['simulation']['boxDimensionX']=100
     datac['simulation']['boxDimensionY'] = 100
     datac['simulation']['boxDimensionZ'] = 100
+    # datac['simulation']['boxDimension']['x']=100
+    # datac['simulation']['boxDimension']['y']=100
+    # datac['simulation']['boxDimension']['z']=100
+    # datac['simulation']['boxPosition']['x']=0
+    # datac['simulation']['boxPosition']['y']=0
+    # datac['simulation']['boxPosition']['z']=0
     datac['simulation']['proximity'] = 2
     datac['simulation']['seed'] = 2
     datac['simulation']['withAir'] = True
@@ -37,6 +43,7 @@ def main():
     print(result)
     result = perc.get_settings(key1)
     print(result)
+    result = perc.delete(key1)
 
 if __name__=="__main__":
     main()
