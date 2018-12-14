@@ -38,8 +38,44 @@ class NetworkFitter():
         else:
             self.serverUrl = serverUrl
 
+    def init_steps(self,jsonstr,utils):
+        response = utils.createNewSimulation()
+        logger.debug(response)
+        key = json.loads(response)["key"]
+        response = utils.loadCircuitFromGraphString(key, jsonstr)
+        logger.debug(response)
+
+        return key
+
+    def make_step(self,key,X,y,inputids,outputids,eq_time,utils):
+
+        for inputid, idnum in zip(inputids, range(len(inputids))):
+            response = utils.setElementProperty(key, str(inputid), "maxVoltage",
+                                                str(X[idnum]))
+
+        # print("Waiting to equilibrate: {} secs".format(eq_time))
+        logger.info("Waiting to equilibrate: {} secs".format(eq_time))
+        utils.startForAndWait(key, eq_time)
+        utils.stop(key)
+
+        outvals = {}
+        # print("Done equilibrating, reading output values")
+        logger.info("Done equilibrating, reading output values")
+        for outid in outputids:
+            response = utils.getCurrent(key, str(outid))
+            curval = json.loads(response)['value']
+            # print("Output current vals: ", curval)
+            outvals[outid]=curval
+
+        return outvals
+
+    def complete_steps(self,key,utils):
+        utils.stop(key)
+        utils.kill(key)
+
     def run_single_sim(self, X, y, inputids, outputids, jsonstr, eq_time, utils, perturb=False):
         response = utils.createNewSimulation()
+
         # print(response)
         logger.debug(response)
         key = json.loads(response)["key"]
@@ -59,6 +95,7 @@ class NetworkFitter():
         logger.info("Waiting to equilibrate: {} secs".format(eq_time))
         utils.startForAndWait(key, eq_time)
         utils.stop(key)
+
         outvals = []
         # print("Done equilibrating, reading output values")
         logger.info("Done equilibrating, reading output values")
@@ -71,7 +108,7 @@ class NetworkFitter():
         outvals.append(y)
         return outvals
 
-    def run_single_sim_series(self, X, y, inputids, outputids, jsonstr, eq_time, utils, perturb=False, repeat=1):
+    def run_single_sim_series(self, X, y, inputids, outputids, jsonstr, eq_time, utils, repeat=1):
         response = utils.createNewSimulation()
         # print(response)
         logger.debug(response)
@@ -316,8 +353,9 @@ def main():
     # input['outputids'] = [203,205,207,209,211,213,215,217]
 
     nf = NetworkFitter()
+    utils = utilities.Utilities(serverUrl=nf.serverUrl)
 
-    circ = nf.generate_random_net_circuit(n=50, nin=2, nout=3)
+    circ ,g = nf.generate_random_net_circuit(n=50, nin=2, nout=3)
 
     nf.circuit = circ
 
@@ -326,6 +364,13 @@ def main():
     X = perturb_X(X, boost=20, var=2)
     y = data[:, -1]
     # plott.plot_json_graph(circ['circuit'])
+
+
+    key = nf.init_steps(circ['circuit'],utils)
+    out1=nf.make_step(key,[1,2],0,circ['inputids'],circ['outputids'],0.0001,utils)
+    out2=nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
+    out3=nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
+    nf.complete_steps(utils,key)
 
     start = time.time()
     nf.eq_time = 0.004

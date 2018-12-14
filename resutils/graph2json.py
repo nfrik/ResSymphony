@@ -276,27 +276,41 @@ def modify_integration_time(circ, set_val='1e-7'):
     return newres
 
 
-def batch_plot_single_sim(res, title="", num_elects=3):
+# def batch_plot_single_sim(res, title="", num_elects=3):
+#     # plt.subplot(1,2,1)
+#     xs = []
+#     plt.figure()
+#     for meas in res.values():
+#         #     res=resharv['1e-6']
+#         #     for n in meas.keys():
+#
+#         #         x1=[meas[k][list(meas[k].keys())[0]] for k in meas.keys()]
+#         #         x2=[meas[k][list(meas[k].keys())[1]] for k in meas.keys()]
+#         #         x3=[meas[k][list(meas[k].keys())[2]] for k in meas.keys()]
+#         #     x4=[meas[k][list(meas[k].keys())[3]] for k in meas.keys()]
+#         plt.ticklabel_format(useOffset=False)
+#         for n in range(num_elects):
+#             x = [meas[k][list(meas[k].keys())[n]] for k in meas.keys()]
+#             plt.plot(x, label=str(list(meas[0].keys())[n]))
+#         #         plt.plot(x2,label=str(list(meas[0].keys())[1]))
+#         #         plt.plot(x3,label=str(list(meas[0].keys())[2]))
+#         plt.legend()
+#         plt.title(title)
+#     #     plt.plot(x4,label='x4')
+#     plt.show()
+#     #     plt.legend()
+#     # plt.show()
+
+def batch_plot_single_sim(res, title=""):
     # plt.subplot(1,2,1)
+    num_elects=len(res[0][0].keys())
     xs = []
     plt.figure()
+    plt.ticklabel_format(useOffset=False)
     for meas in res.values():
-        #     res=resharv['1e-6']
-        #     for n in meas.keys():
-
-        #         x1=[meas[k][list(meas[k].keys())[0]] for k in meas.keys()]
-        #         x2=[meas[k][list(meas[k].keys())[1]] for k in meas.keys()]
-        #         x3=[meas[k][list(meas[k].keys())[2]] for k in meas.keys()]
-        #     x4=[meas[k][list(meas[k].keys())[3]] for k in meas.keys()]
-        plt.ticklabel_format(useOffset=False)
         for n in range(num_elects):
             x = [meas[k][list(meas[k].keys())[n]] for k in meas.keys()]
             plt.plot(x, label=str(list(meas[0].keys())[n]))
-        #         plt.plot(x2,label=str(list(meas[0].keys())[1]))
-        #         plt.plot(x3,label=str(list(meas[0].keys())[2]))
-        plt.legend()
-        plt.title(title)
-    #     plt.plot(x4,label='x4')
+    plt.title(title)
+    plt.legend()
     plt.show()
-    #     plt.legend()
-    # plt.show()
