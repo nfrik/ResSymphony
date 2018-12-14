@@ -18,6 +18,7 @@ from resutils import utilities
 from resutils import netfitter2 as netfitter
 from scipy import signal
 from posixpath import join as urljoin
+from collections import OrderedDict
 
 import requests
 import json
@@ -587,14 +588,14 @@ class Percolator:
                 accepted_graphs.append(sg)
         return accepted_graphs
 
-    def get_3d_minmax(self,supergraph):
+    def get_3d_minmax(self,supergraph,is3d=True):
         pos3d = nx.get_node_attributes(supergraph, 'pos3d')
         xmin = min([k[0] for k in pos3d.values()])
         xmax = max([k[0] for k in pos3d.values()])
         ymin = min([k[1] for k in pos3d.values()])
         ymax = max([k[1] for k in pos3d.values()])
         zmin = min([k[2] for k in pos3d.values()])
-        zmax = max([k[2] for k in pos3d.values()])
+        zmax = max([k[2] for k in pos3d.values()]) if is3d else 0.
         return xmin, xmax, ymin, ymax, zmin, zmax
 
     # retrieves graphs connected to elects1 and elects2 - electrode arrays along x axis
@@ -658,7 +659,7 @@ class Percolator:
         plt.show()
         return ax
 
-    def plot_pos3d(self,accepted_graph, ax=None, title=''):
+    def plot_pos3d(accepted_graph, ax=None, title='', is3d=True):
         pos3d = nx.get_node_attributes(accepted_graph, 'pos3d')
         xs = [pos3d[k][0] for k in accepted_graph.nodes()]
         ys = [pos3d[k][1] for k in accepted_graph.nodes()]
@@ -667,15 +668,15 @@ class Percolator:
         if ax == None:
             fig = plt.figure(figsize=(10, 10))
             ax = fig.gca(projection="3d")
-            ax.scatter(xs, ys, zs, c='r', s=5)
+        #         ax.scatter(xs, ys, zs, c='r', s=5)
         # ax.plot(xs,ys,zs, color='r')
         for e in accepted_graph.edges():
             x1 = pos3d[e[0]][0]
             y1 = pos3d[e[0]][1]
-            z1 = pos3d[e[0]][2]
+            z1 = pos3d[e[0]][2] if is3d else 0.
             x2 = pos3d[e[1]][0]
             y2 = pos3d[e[1]][1]
-            z2 = pos3d[e[1]][2]
+            z2 = pos3d[e[1]][2] if is3d else 0.
             x = [x1, x2]
             y = [y1, y2]
             z = [z1, z2]
@@ -683,18 +684,35 @@ class Percolator:
             try:
                 edgetype = accepted_graph[e[0]][e[1]]['edgetype']
                 if 'm' in edgetype:
-                    ax.plot(x, y, z, c='b')
-                else:
-                    ax.plot(x, y, z, c='k')
+                    ax.plot(x, y, z, c='b', label='memristor')
+                elif 'r' in edgetype:
+                    ax.plot(x, y, z, c='m', label='resistor')
+                elif 'w' in edgetype:
+                    ax.plot(x, y, z, c='g', label='wire')
             except:
                 ax.plot(x, y, z, c='k')
                 pass
 
+        # Remove background axis color
+        ax.set_facecolor((0, 0, 0, 0))
+        ax.xaxis.pane.set_edgecolor('w')
+        ax.yaxis.pane.set_edgecolor('w')
+        ax.zaxis.pane.set_edgecolor('w')
+        ax.xaxis.pane.fill = False
+        ax.yaxis.pane.fill = False
+        ax.zaxis.pane.fill = False
+        # Bonus: To get rid of the grid as well:
+        ax.grid(False)
+
         plt.title(title)
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys())
         ax.set_xlabel("x")
         ax.set_ylabel("y")
         ax.set_zlabel("z")
         ax.view_init(elev=20, azim=90)
+
         plt.show()
         return ax
 

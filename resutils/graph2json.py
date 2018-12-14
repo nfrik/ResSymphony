@@ -279,6 +279,7 @@ def modify_integration_time(circ, set_val='1e-7'):
 def batch_plot_single_sim(res, title="", num_elects=3):
     # plt.subplot(1,2,1)
     xs = []
+    plt.figure()
     for meas in res.values():
         #     res=resharv['1e-6']
         #     for n in meas.keys():
@@ -287,7 +288,6 @@ def batch_plot_single_sim(res, title="", num_elects=3):
         #         x2=[meas[k][list(meas[k].keys())[1]] for k in meas.keys()]
         #         x3=[meas[k][list(meas[k].keys())[2]] for k in meas.keys()]
         #     x4=[meas[k][list(meas[k].keys())[3]] for k in meas.keys()]
-        plt.figure()
         plt.ticklabel_format(useOffset=False)
         for n in range(num_elects):
             x = [meas[k][list(meas[k].keys())[n]] for k in meas.keys()]
