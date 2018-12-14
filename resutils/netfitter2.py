@@ -69,7 +69,7 @@ class NetworkFitter():
 
         return outvals
 
-    def complete_steps(self,utils,key):
+    def complete_steps(self,key,utils):
         utils.stop(key)
         utils.kill(key)
 
@@ -370,7 +370,7 @@ def main():
     out1=nf.make_step(key,[1,2],0,circ['inputids'],circ['outputids'],0.0001,utils)
     out2=nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
     out3=nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
-    nf.complete_steps(utils,key)
+    nf.complete_steps(key,utils)
 
     start = time.time()
     nf.eq_time = 0.004
