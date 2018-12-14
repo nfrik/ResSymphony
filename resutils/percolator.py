@@ -302,9 +302,28 @@ class Percolator:
         self.analyze(key=key,withAir=data['simulation']['withAir'])
         network = self.export_network(key)
         network['stat']
-        network['stat']['aspect'] = data['cylinder']['length'] / data['cylinder']['diameter']
-        network['stat']['boxVol'] = data['simulation']['boxDimensionX'] * data['simulation']['boxDimensionY'] * data['simulation']['boxDimensionZ']
-        network['stat']['cylN'] = data['cylinder']['number']
+
+        network['stat']['boxVol'] = data['simulation']['boxDimensionX'] * \
+                                    data['simulation']['boxDimensionY'] * \
+                                    data['simulation']['boxDimensionZ']
+        try:
+            network['stat']['aspect'] = data['cylinder']['length'] / data['cylinder']['diameter']
+            network['stat']['cylN'] = data['cylinder']['number']
+        except:
+            pass
+
+        try:
+            network['stat']['sphereD'] = data['sphere']['diameter']
+            network['stat']['sphereN'] = data['sphere']['number']
+        except:
+            pass
+
+        try:
+            network['stat']['aspect'] = data['spaghetti']['length'] / data['spaghetti']['diameter']
+            network['stat']['cylN'] = data['spaghetti']['number']
+        except:
+            pass
+
         network['stat']
         return network
 
