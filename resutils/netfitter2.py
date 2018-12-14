@@ -220,32 +220,33 @@ class NetworkFitter():
             plt.show()
         return G
 
-    def generate_random_net_circuit(self, n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndmzd=False, net_type='ws'):
+    def generate_random_net_circuit(self, n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndmzd=False, net_type='ws', \
+                                    Ron=500,Roff=10000,dopwidth=0,totwidth=1.0E-8,mobility=1.0E-10,drainres=100,t_step="5e-6"):
 
         # memristor base configuration
-        Ron = 500.
-        Roff = 100000.
-        dopwidth = 0.
-        totwidth = 1.0E-8
-        mobility = 1.0E-10
+        Ron = Ron
+        Roff = Roff
+        dopwidth = dopwidth
+        totwidth = totwidth
+        mobility = mobility
 
-        drainres = 100
+        drainres = drainres
 
-        elemceil = 10000  # maximum id of element
+        elemceil = 100000  # maximum id of element
 
         G = self.generate_random_net(n=n, p=p, k=k, net_type=net_type)
         edges = G.edges()
         doc = {}
-        doc[0] = ['$', 1, 5e-06, 10.634267539816555, 43, 2.0, 50]
-        for e, elemid in zip(edges, range(1, len(edges) + 1)):
+        doc[0] = ['$', 1, t_step, 10.634267539816555, 43, 2.0, 50]
+        for elemid, ed in enumerate(edges, 1):
             # lst=["m",e[0],e[1],0,i,"100.0","32000.0","0.0","1.0E-8","1.0E-10"]
             if el_type == 'm':
                 totwidth_rnd = totwidth + random.uniform(-totwidth / 5., totwidth / 5.)
                 dopwidth_rnd = random.uniform(0., totwidth_rnd)
-                lst = ["m", e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth if rndmzd else dopwidth_rnd),
+                lst = ["m", ed[0], ed[1], 0, elemid, str(Ron), str(Roff), str(dopwidth if rndmzd else dopwidth_rnd),
                        str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
             elif el_type == 'd':
-                lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
+                lst = ["d", ed[0], ed[1], 1, elemid, "0.805904"]
             doc[elemid] = lst
 
         nodes = list(G.nodes)
@@ -277,11 +278,11 @@ class NetworkFitter():
             doc[elemid] = lst
 
         result = {}
-        result['circuit'] = json.dumps(doc, sort_keys=True, indent=4)
+        result['circuit'] = json.dumps(doc)
         result['inputids'] = inputids
         result['outputids'] = outputids
 
-        return result
+        return result, G
 
 
 def perturb_X(X, boost=3, var=1):

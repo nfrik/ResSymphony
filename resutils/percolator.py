@@ -87,6 +87,7 @@ class Percolator:
             },
             "spaghetti": {
                 "angleDev": 0,
+                "firstAngleDev": 0,
                 "angleX": 0,
                 "angleZ": 0,
                 "diamDev": 0,
@@ -107,17 +108,17 @@ class Percolator:
                 "enabled": False,
                 "number": 0,
                 "sticky": False
-            },
-            "visualization": {
-                "drawMode": "LINE",
-                "highlightContactedObjects": False,
-                "polygonsNumber": 0,
-                "proximitySphere": False,
-                "showAABB": False,
-                "showAxes": False,
-                "showBox": False,
-                "showContacts": False,
-                "showObjects": False
+            # },
+            # "visualization": {
+            #     "drawMode": "LINE",
+            #     "highlightContactedObjects": False,
+            #     "polygonsNumber": 0,
+            #     "proximitySphere": False,
+            #     "showAABB": False,
+            #     "showAxes": False,
+            #     "showBox": False,
+            #     "showContacts": False,
+            #     "showObjects": False
             }
         }
 
@@ -237,7 +238,7 @@ class Percolator:
         url = urljoin(Percolator.serverUrl_uuid, 'export')
         payload = {'uuid': key}
         headers = {
-            'Accept': 'text/plain',
+            'Accept': '*/*',
         }
         response = requests.get(url, headers=headers,params=payload)
         return json.loads(response.text)
@@ -246,7 +247,7 @@ class Percolator:
         url = urljoin(Percolator.serverUrl_uuid, 'export-network')
         payload = {'uuid': key}
         headers = {
-            'Accept': 'text/plain',
+            'Accept': '*/*',
         }
         response = requests.get(url, headers=headers,params=payload)
         return json.loads(response.text)
@@ -857,7 +858,7 @@ def network_groomer(self,accepted_graphs,els1,els2,el1_nodes,el2_nodes,xmin,xmax
     # plot_electrodes(xmax=xmax, ymax=ymax, zmax=zmax, ax=ax, els=els2, xdelta=delta)
 
 def main():
-    percolator = Percolator(serverUrl="http://152.14.71.96:8096/percolator/")
+    percolator = Percolator(serverUrl="http://spartan.mse.ncsu.edu:8096/percolator/")
     X, y = percolator.get_dataset(type='xor',periods=6,boost=10,var=0.5)
 
     # accepted_graphs,el1_nodes,el2_nodes = network_create()
@@ -881,7 +882,7 @@ def main():
     # ins=circ['inputids']
     # outs=circ['outputids']
 
-    nf = netfitter.NetworkFitter(serverUrl="http://152.14.71.96:8090/symphony/")
+    nf = netfitter.NetworkFitter(serverUrl="http://spartan.mse.ncsu.edu:8090/symphony/")
     nf.eq_time = 0.01
     circ = modify_integration_time(circ, set_val='1e-5')
     nf.circuit = circ
