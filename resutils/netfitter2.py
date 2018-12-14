@@ -69,7 +69,7 @@ class NetworkFitter():
 
         return outvals
 
-    def complete_steps(self,key,utils):
+    def complete_steps(self,utils,key):
         utils.stop(key)
         utils.kill(key)
 
