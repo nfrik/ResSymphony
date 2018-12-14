@@ -659,18 +659,18 @@ class Percolator:
         plt.show()
         return ax
 
-    def plot_pos3d(accepted_graph, ax=None, title='', is3d=True):
-        pos3d = nx.get_node_attributes(accepted_graph, 'pos3d')
-        xs = [pos3d[k][0] for k in accepted_graph.nodes()]
-        ys = [pos3d[k][1] for k in accepted_graph.nodes()]
-        zs = [pos3d[k][2] for k in accepted_graph.nodes()]
+    def plot_pos3d(graph=None, ax=None, title='', is3d=True):
+        pos3d = nx.get_node_attributes(graph, 'pos3d')
+        # xs = [pos3d[k][0] for k in accepted_graph.nodes()]
+        # ys = [pos3d[k][1] for k in accepted_graph.nodes()]
+        # zs = [pos3d[k][2] for k in accepted_graph.nodes()]
 
         if ax == None:
             fig = plt.figure(figsize=(10, 10))
             ax = fig.gca(projection="3d")
         #         ax.scatter(xs, ys, zs, c='r', s=5)
         # ax.plot(xs,ys,zs, color='r')
-        for e in accepted_graph.edges():
+        for e in graph.edges():
             x1 = pos3d[e[0]][0]
             y1 = pos3d[e[0]][1]
             z1 = pos3d[e[0]][2] if is3d else 0.
@@ -682,7 +682,7 @@ class Percolator:
             z = [z1, z2]
             edgetype = {}
             try:
-                edgetype = accepted_graph[e[0]][e[1]]['edgetype']
+                edgetype = graph[e[0]][e[1]]['edgetype']
                 if 'm' in edgetype:
                     ax.plot(x, y, z, c='b', label='memristor')
                 elif 'r' in edgetype:
@@ -895,29 +895,30 @@ def network_groomer(self,accepted_graphs,els1,els2,el1_nodes,el2_nodes,xmin,xmax
     # plot_electrodes(xmax=xmax, ymax=ymax, zmax=zmax, ax=ax, els=els2, xdelta=delta)
 
 def main():
-    percolator = Percolator(serverUrl="http://spartan.mse.ncsu.edu:8096/percolator/")
+    # percolator = Percolator(serverUrl="http://spartan.mse.ncsu.edu:8096/percolator/")
+    percolator = Percolator(serverUrl="http://spartan.mse.ncsu.edu:15850/percolator/")
     X, y = percolator.get_dataset(type='xor',periods=6,boost=10,var=0.5)
 
-    # accepted_graphs,el1_nodes,el2_nodes = network_create()
-    comb_graph, el_pan = network_create()
-    ax = percolator.plot_pos3d(comb_graph, title="test")
-
-    ins = el_pan[0][:2]
-    outs = el_pan[1][:3]
-    # Weird but you have to run this method twice to correctly apply conversions
-    # comb_graph = wired_electrodes_graph
-    # comb_graph = prune_dead_edges(wired_electrodes_graph, runs=25)
-    # comb_graph = convert_devices_to_resistors(comb_graph,min_length=0.00,max_length=6.0,in_range_dev='m',out_range_dev='r')
-    mems = sum([v == 'm' for v in nx.get_edge_attributes(comb_graph, 'edgetype').values()])
-    print("Total mems: ", mems)
-    circ = transform_network_to_circuit(graph=comb_graph, inels=ins, outels=outs, t_step="5e-6", scale=1E-6)
-
-    # with open('/home/nifrick/Documents/development/jupyter/networktest/shortest_path_depth_analysis/circuit1_depth17_dd.json',
-    #         'r') as f:
-    #     circ=json.loads(json.load(f))
+    # # accepted_graphs,el1_nodes,el2_nodes = network_create()
+    # comb_graph, el_pan = network_create()
+    # ax = percolator.plot_pos3d(comb_graph, title="test")
     #
-    # ins=circ['inputids']
-    # outs=circ['outputids']
+    # ins = el_pan[0][:2]
+    # outs = el_pan[1][:3]
+    # # Weird but you have to run this method twice to correctly apply conversions
+    # # comb_graph = wired_electrodes_graph
+    # # comb_graph = prune_dead_edges(wired_electrodes_graph, runs=25)
+    # # comb_graph = convert_devices_to_resistors(comb_graph,min_length=0.00,max_length=6.0,in_range_dev='m',out_range_dev='r')
+    # mems = sum([v == 'm' for v in nx.get_edge_attributes(comb_graph, 'edgetype').values()])
+    # print("Total mems: ", mems)
+    # circ = transform_network_to_circuit(graph=comb_graph, inels=ins, outels=outs, t_step="5e-6", scale=1E-6)
+
+    with open('/home/nifrick/Documents/development/jupyter/networktest/shortest_path_depth_analysis/circuit1_depth17_dd.json',
+            'r') as f:
+        circ=json.loads(json.load(f))
+
+    ins=circ['inputids']
+    outs=circ['outputids']
 
     nf = netfitter.NetworkFitter(serverUrl="http://spartan.mse.ncsu.edu:8090/symphony/")
     nf.eq_time = 0.01
