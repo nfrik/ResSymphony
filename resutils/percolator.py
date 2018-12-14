@@ -659,7 +659,7 @@ class Percolator:
         plt.show()
         return ax
 
-    def plot_pos3d(graph=None, ax=None, title='', is3d=True):
+    def plot_pos3d(self,graph=None, ax=None, title='', is3d=True):
         pos3d = nx.get_node_attributes(graph, 'pos3d')
         # xs = [pos3d[k][0] for k in accepted_graph.nodes()]
         # ys = [pos3d[k][1] for k in accepted_graph.nodes()]
