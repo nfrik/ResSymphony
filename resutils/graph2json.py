@@ -146,7 +146,7 @@ def transform_network_to_circuit_plain(graph, inels, outels, t_step="5e-6", scal
             lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
         doc[elemid] = lst
 
-    nodes = list(G.nodes)
+    # nodes = list(G.nodes)
 
     #     inoutnodes = random.sample(nodes, nin + nout)
 
@@ -210,7 +210,7 @@ def generate_random_net_circuit(n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndm
             lst = ["m", ed[0], ed[1], 0, elemid, str(Ron), str(Roff), str(dopwidth if rndmzd else dopwidth_rnd),
                    str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
         elif el_type == 'd':
-            lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
+            lst = ["d", ed[0], ed[1], 1, elemid, "0.805904"]
         doc[elemid] = lst
 
     nodes = list(G.nodes)

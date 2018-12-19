@@ -359,7 +359,7 @@ class Percolator:
 
         for k in data['list']:
             for n in data['list'][k]:
-                G.add_edge(int(k), int(n[1]), edgetype='m', edgeclass=n[0])
+                G.add_edge(int(k), int(n[1]), edgetype='r', edgeclass=n[0])
 
         pos = nx.get_node_attributes(G, 'pos')
         pos3d = nx.get_node_attributes(G, 'pos3d')
