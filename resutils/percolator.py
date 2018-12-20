@@ -412,7 +412,7 @@ class Percolator:
             for electrode in electrodearray.values():
                 #             for node in electrodearray[electrode]:
                 for wire in self.pairwise(electrode):  # itertools.combinations(electrode,2):
-                    subgraph.add_edge(wire[0], wire[1], edgetype='w')
+                    subgraph.add_edge(wire[0], wire[1], edgetype='w',edgeclass='wire')
         return subgraph
 
     def convert_devices_to_resistors(self,graph, min_length=10, max_length=1e8, out_range_dev='m', in_range_dev='r'):

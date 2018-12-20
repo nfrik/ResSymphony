@@ -42,8 +42,8 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, nw_re
             el_type = elemtypes[e]
             el_class = elemclasses[e]
         except:
-            el_type = 'm'
-            print("Error occured")
+            el_type = 'w'
+            print("Can't obtain edge properties")
             pass
         if el_type == 'm':
             totwidth_rnd = totwidth + random.uniform(-totwidth / 5., totwidth / 5.)
@@ -57,6 +57,8 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, nw_re
                 lst = ['r', e[0], e[1], 0, elemid, str(dist*nw_res_per_nm)]
         elif el_type == 'd':
             lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
+        elif el_type == 'w':
+            lst = ["w", e[0], e[1], 1, elemid]
         doc[elemid] = lst
 
     # nodes = list(G.nodes)
