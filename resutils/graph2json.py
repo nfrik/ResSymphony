@@ -6,7 +6,7 @@ import json
 import resutils.nxgtutils as nxutils
 
 
-def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, nw_res_per_nm=0.005, t_step="5e-6", scale=1e-9,elemceil = 10000,randomized_mem_width=False):
+def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, nw_res_per_nm=0.005, junct_res_per_nm=25, t_step="5e-6", scale=1e-9,elemceil = 10000,randomized_mem_width=False):
     pos3d = nx.get_node_attributes(graph, 'pos3d')
     #     el_type='m'
     rndmzd = randomized_mem_width
@@ -24,6 +24,7 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, nw_re
 
     edges = graph.edges()
     elemtypes = nx.get_edge_attributes(graph, 'edgetype')
+    elemclasses = nx.get_edge_attributes(graph, 'edgeclass')
     doc = {}
     doc[0] = ['$', 1, t_step, 10.634267539816555, 43, 2.0, 50]
 
@@ -39,6 +40,7 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, nw_re
         Roff = 1000 * dist
         try:
             el_type = elemtypes[e]
+            el_class = elemclasses[e]
         except:
             el_type = 'm'
             print("Error occured")
@@ -49,7 +51,10 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, nw_re
             lst = ["m", e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth if rndmzd else dopwidth_rnd),
                    str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
         elif el_type == 'r':
-            lst = ['r', e[0], e[1], 0, elemid, str(dist*nw_res_per_nm)]
+            if 'air' in el_class:
+                lst = ['r', e[0], e[1], 0, elemid, str(dist*junct_res_per_nm)]
+            else:
+                lst = ['r', e[0], e[1], 0, elemid, str(dist*nw_res_per_nm)]
         elif el_type == 'd':
             lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
         doc[elemid] = lst
