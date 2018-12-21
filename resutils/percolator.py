@@ -659,7 +659,7 @@ class Percolator:
         plt.show()
         return ax
 
-    def plot_pos3d(self,graph=None, ax=None, title='', is3d=True):
+    def plot_pos3d(self,graph=None, ax=None, title='', is3d=True,plot_wires=True):
         pos3d = nx.get_node_attributes(graph, 'pos3d')
         # xs = [pos3d[k][0] for k in accepted_graph.nodes()]
         # ys = [pos3d[k][1] for k in accepted_graph.nodes()]
@@ -688,7 +688,8 @@ class Percolator:
                 elif 'r' in edgetype:
                     ax.plot(x, y, z, c='m', label='resistor')
                 elif 'w' in edgetype:
-                    ax.plot(x, y, z, c='g', label='wire')
+                    if plot_wires:
+                        ax.plot(x, y, z, c='g', label='wire')
             except:
                 ax.plot(x, y, z, c='k')
                 pass
@@ -718,7 +719,7 @@ class Percolator:
 
     def plot_electrodes(self,ax=None, els=None, xmax=1, ymax=1, zmax=1, xdelta=1):
         x1, x2 = xmax - xdelta, xmax + xdelta
-        colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k'] * 10
+        colors = ['k', 'g', 'b', 'r', 'c', 'm', 'y', 'k'] * 10
         if ax == None:
             fig = plt.figure(figsize=(10, 10))
             ax = fig.gca(projection="3d")
