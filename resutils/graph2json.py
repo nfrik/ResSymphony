@@ -33,11 +33,13 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, nw_re
         # lst=["m",e[0],e[1],0,i,"100.0","32000.0","0.0","1.0E-8","1.0E-10"]
         p1 = np.array(pos3d[e[0]])
         p2 = np.array(pos3d[e[1]])
-        dist = np.linalg.norm(p1 - p2) * scale * 1e9
-        totwidth = dist * 1e-9
-        dopwidth = dist * 0.5 * 1e-9
-        Ron = 100 * dist
-        Roff = 1000 * dist
+        length = np.linalg.norm(p1 - p2) * scale * 1e9
+        # totwidth = length * 1e-9
+        # dopwidth = length * 0.5 * 1e-9
+        totwidth = length
+        dopwidth = length * 0.5
+        Ron = 100 * length
+        Roff = 1000 * length
         try:
             el_type = elemtypes[e]
             el_class = elemclasses[e]
@@ -52,9 +54,9 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, nw_re
                    str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
         elif el_type == 'r':
             if 'air' in el_class:
-                lst = ['r', e[0], e[1], 0, elemid, str(dist*junct_res_per_nm)]
+                lst = ['r', e[0], e[1], 0, elemid, str(length*junct_res_per_nm)]
             else:
-                lst = ['r', e[0], e[1], 0, elemid, str(dist*nw_res_per_nm)]
+                lst = ['r', e[0], e[1], 0, elemid, str(length*nw_res_per_nm)]
         elif el_type == 'd':
             lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
         elif el_type == 'w':
