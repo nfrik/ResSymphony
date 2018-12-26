@@ -319,7 +319,9 @@ def batch_plot_single_sim(res, title=""):
     for meas in res.values():
         for n in range(num_elects):
             x = [meas[k][list(meas[k].keys())[n]] for k in meas.keys()]
+            xs.append(x)
             plt.plot(x, label=str(list(meas[0].keys())[n]))
     plt.title(title)
     plt.legend()
     plt.show()
+    return xs

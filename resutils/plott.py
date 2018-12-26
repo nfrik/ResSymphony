@@ -117,6 +117,40 @@ def pca_plotter(input,savepath=""):
     else:
         plt.show()
 
+
+def plot_meas(datav=None, datai=None, title=''):
+    plt.figure(figsize=(10, 5))
+    #     df = pd.read_csv(fle)
+    # plt.subplot(211)
+    plt.plot(datav, np.multiply(1000, datai))
+    plt.xlabel('Voltage (V)')
+    plt.ylabel('Current (mA)')
+    plt.title(title)
+    plt.axhline(0, linewidth=.3, color='k')
+    plt.axvline(0, linewidth=.3, color='k')
+    # fig, ax = plt.subplots(212)
+    # ax1, ax2 = two_scales(df['Time(s)']*1000,df['Drive(V)']*1000, df['Time(s)']*1000,df['Current(mA)']*50000000, 'r', 'b')
+
+    fig, ax1 = plt.subplots()
+    t = np.arange(0.01, 10.0, 0.01)
+    s1 = np.exp(t)
+    ax1.plot(datav, 'b-')
+    ax1.set_xlabel('time (s)')
+    # Make the y-axis label, ticks and tick labels match the line color.
+    ax1.set_ylabel('Voltage (V)', color='b')
+    ax1.tick_params('y', colors='b')
+
+    ax2 = ax1.twinx()
+    s2 = np.sin(2 * np.pi * t)
+    ax2.plot(np.multiply(1000, datai), 'r-')
+    ax2.set_ylabel('Current (mA)', color='r')
+    ax2.tick_params('y', colors='r')
+
+    fig.tight_layout()
+    # plt.show()
+
+    plt.show()
+
 def plot_json_graph(dictdata,imagepath=""):
 
     col_map, edgelist = json2edgelist(dictdata)
