@@ -125,6 +125,85 @@ class Percolator:
 
         return defconfig
 
+    def create_elect_boxes(self,elmat=[1, 1], gap=0.3, plane=0,
+                           box={'x0': 0, 'y0': 0, 'z0': 0, 'x1': 100, 'y1': 100, 'z1': 100}, delta=(0, 0, 0)):
+        elects = self.get_electrodes_rects(elmat, gap=gap)
+        elects_boxes = {}
+        for k in elects.keys():
+            if plane == 0:
+                y0, z0, h, w = elects[k][0], elects[k][1], elects[k][2], elects[k][3]
+                y1 = y0 + h
+                z1 = z0 + w
+                y0 = y0 * abs(box['y1'] - box['y0']) * 0.9 + box['y0']
+                y1 = y1 * abs(box['y1'] - box['y0']) * 0.9 + box['y0']
+                z0 = z0 * abs(box['z1'] - box['z0']) * 0.9 + box['z0']
+                z1 = z1 * abs(box['z1'] - box['z0']) * 0.9 + box['z0']
+                elects_boxes[k] = {'x0': box['x0'] - delta[0], 'x1': box['x0'] + delta[0], 'y0': y0, 'y1': y1, 'z0': z0,
+                                   'z1': z1}
+            elif plane == 1:
+                y0, z0, h, w = elects[k][0], elects[k][1], elects[k][2], elects[k][3]
+                y1 = y0 + h
+                z1 = z0 + w
+                y0 = y0 * abs(box['y1'] - box['y0']) * 0.9 + box['y0']
+                y1 = y1 * abs(box['y1'] - box['y0']) * 0.9 + box['y0']
+                z0 = z0 * abs(box['z1'] - box['z0']) * 0.9 + box['z0']
+                z1 = z1 * abs(box['z1'] - box['z0']) * 0.9 + box['z0']
+                elects_boxes[k] = {'x0': box['x1'] - delta[0], 'x1': box['x1'] + delta[0], 'y0': y0, 'y1': y1, 'z0': z0,
+                                   'z1': z1}
+            elif plane == 2:
+                x0, z0, h, w = elects[k][0], elects[k][1], elects[k][2], elects[k][3]
+                x1 = x0 + h
+                z1 = z0 + w
+                x0 = x0 * abs(box['x1'] - box['x0']) * 0.9 + box['x0']
+                x1 = x1 * abs(box['x1'] - box['x0']) * 0.9 + box['x0']
+                z0 = z0 * abs(box['z1'] - box['z0']) * 0.9 + box['z0']
+                z1 = z1 * abs(box['z1'] - box['z0']) * 0.9 + box['z0']
+                x0 += 4 * delta[0]
+                x1 += 4 * delta[0]
+                elects_boxes[k] = {'x0': x0, 'x1': x1, 'y0': box['y0'] - delta[1], 'y1': box['y0'] + delta[1], 'z0': z0,
+                                   'z1': z1}
+            elif plane == 3:
+                x0, z0, h, w = elects[k][0], elects[k][1], elects[k][2], elects[k][3]
+                x1 = x0 + h
+                z1 = z0 + w
+                x0 = x0 * abs(box['x1'] - box['x0']) * 0.9
+                x1 = x1 * abs(box['x1'] - box['x0']) * 0.9
+                z0 = z0 * abs(box['z1'] - box['z0']) * 0.9
+                z1 = z1 * abs(box['z1'] - box['z0']) * 0.9
+                x0 += 4 * delta[0]
+                x1 += 4 * delta[0]
+                elects_boxes[k] = {'x0': x0, 'x1': x1, 'y0': box['y1'] - delta[1], 'y1': box['y1'] + delta[1], 'z0': z0,
+                                   'z1': z1}
+        return elects_boxes
+
+    def get_graphs_connecting_electrodearrays(self,supergraph, el_arrays=None):
+        pos3d = nx.get_node_attributes(supergraph, 'pos3d')
+        subgraphs = list(nx.connected_component_subgraphs(supergraph))
+        accepted_graphs = []
+        nodes_in_earray = {}
+        for sg in subgraphs:
+            subpos = self.get_pos_for_subgraph(sg, pos3d)
+            isgood = []
+            for k, el_array in el_arrays.items():
+                n_in_arr = self.get_nodes_for_box_array(subpos, el_array)
+                for kk, vv in n_in_arr.items():
+                    if len(vv) > 0:
+                        isgood.append(True)
+                    else:
+                        isgood.append(False)
+            if False not in isgood:
+                accepted_graphs.append(sg)
+        return accepted_graphs
+
+    def get_nodes_for_box_array(self,pos, el_array=None):
+        elects_bucket = {}
+        for k in el_array.keys():
+            x1, y1, z1, x2, y2, z2 = el_array[k]['x0'], el_array[k]['y0'], el_array[k]['z0'], el_array[k]['x1'], \
+                                     el_array[k]['y1'], el_array[k]['z1']
+            elects_bucket[k] = self.get_nodes_within_3dboundary(pos, lowerbx=x1, upperbx=x2, lowerby=y1, upperby=y2,
+                                                                lowerbz=z1, upperbz=z2)
+        return elects_bucket
+
     def generate_network_native(self, key,data):
         url = Percolator.serverUrl_uuid + 'generate'
         payload = {'uuid': key}
@@ -414,6 +493,8 @@ class Percolator:
                 for wire in self.pairwise(electrode):  # itertools.combinations(electrode,2):
                     subgraph.add_edge(wire[0], wire[1], edgetype='w',edgeclass='wire')
         return subgraph
+
+
 
     def convert_devices_to_resistors(self,graph, min_length=10, max_length=1e8, out_range_dev='m', in_range_dev='r'):
         #     graph_copy=nx.Graph()
@@ -755,6 +836,41 @@ class Percolator:
             #     edges.append([y1,y1,y2,y2])
             #     edges.append([z1,z2,z1,z2])
             #     edges.append([x1,x1,x1,x1])
+            for e in edges:
+                y = np.array(e)[:, 0].tolist()
+                z = np.array(e)[:, 1].tolist()
+                x = np.array(e)[:, 2].tolist()
+                ax.plot(x, y, z, colors[n])
+        return ax
+
+    def plot_electrode_boxes(self,ax=None, el_array=None):
+        #     x1, x2 = xmax - xdelta, xmax + xdelta
+        colors = ['k', 'g', 'b', 'r', 'c', 'm', 'y', 'k'] * 10
+        if ax == None:
+            fig = plt.figure(figsize=(10, 10))
+            ax = fig.gca(projection="3d")
+            ax.set_xlabel("x")
+            ax.set_ylabel("y")
+            ax.set_zlabel("z")
+        for k, n in zip(list(el_array.keys()), range(len(list(el_array.keys())))):
+            x1, y1, z1, x2, y2, z2 = el_array[k]['x0'], el_array[k]['y0'], el_array[k]['z0'], el_array[k]['x1'], \
+                                     el_array[k]['y1'], el_array[k]['z1']
+            edges = []
+            edges.append([[y1, z1, x1], [y1, z2, x1]])
+            edges.append([[y1, z2, x1], [y2, z2, x1]])
+            edges.append([[y2, z2, x1], [y2, z1, x1]])
+            edges.append([[y2, z1, x1], [y1, z1, x1]])
+
+            edges.append([[y1, z1, x2], [y1, z2, x2]])
+            edges.append([[y1, z2, x2], [y2, z2, x2]])
+            edges.append([[y2, z2, x2], [y2, z1, x2]])
+            edges.append([[y2, z1, x2], [y1, z1, x2]])
+
+            edges.append([[y1, z1, x1], [y1, z1, x2]])
+            edges.append([[y1, z2, x1], [y1, z2, x2]])
+            edges.append([[y2, z2, x1], [y2, z2, x2]])
+            edges.append([[y2, z1, x1], [y2, z1, x2]])
+
             for e in edges:
                 y = np.array(e)[:, 0].tolist()
                 z = np.array(e)[:, 1].tolist()
