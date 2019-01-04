@@ -773,6 +773,8 @@ class Percolator:
                 elif 'w' in edgetype:
                     if plot_wires:
                         ax.plot(x, y, z, c='g', label='wire')
+                elif 'w' in edgetype:
+                    ax.plot(x, y, z, c='m', label='diode')
             except:
                 ax.plot(x, y, z, c='k')
                 pass
