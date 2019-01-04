@@ -36,8 +36,8 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, Ron_p
         length = np.linalg.norm(p1 - p2) * scale * 1e9
         # totwidth = length * 1e-9
         # dopwidth = length * 0.5 * 1e-9
-        totwidth = length
-        dopwidth = length * 0.5
+        totwidth = length * 1e-9
+        dopwidth = length * 0.5 * 1e-9
         Ron = Ron_pnm * length
         Roff = Roff_pnm * length
         try:
