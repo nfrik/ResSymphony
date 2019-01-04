@@ -50,8 +50,8 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, Ron_p
         if el_type == 'm':
             totwidth_rnd = totwidth + random.uniform(-totwidth / 5., totwidth / 5.)
             dopwidth_rnd = random.uniform(0., totwidth_rnd)
-            lst = ["m", e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth if rndmzd else dopwidth_rnd),
-                   str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
+            lst = ["m", e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth_rnd if rndmzd else dopwidth),
+                   str(totwidth_rnd if rndmzd else totwidth), str(mobility)]
         elif el_type == 'r':
             if 'air' in el_class:
                 lst = ['r', e[0], e[1], 0, elemid, str(length*junct_res_per_nm)]
