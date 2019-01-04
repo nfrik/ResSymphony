@@ -513,7 +513,7 @@ class Percolator:
                 graph_copy[e[0]][e[1]]['edgetype'] = out_range_dev
         return graph_copy
 
-    def convert_edgeclass_to_device(self,graph, mem='wo3', res='ag'):
+    def convert_edgeclass_to_device(self,graph, mem='wo3', res='ag', diode='none'):
         graph_copy = graph.copy()
         edges = graph_copy.edges()
         for e, v in nx.get_edge_attributes(graph_copy, 'edgeclass').items():
@@ -521,6 +521,8 @@ class Percolator:
                 graph_copy[e[0]][e[1]]['edgetype'] = 'm'
             elif res.lower() in v.lower():
                 graph_copy[e[0]][e[1]]['edgetype'] = 'r'
+            elif diode.lower() in v.lower():
+                graph_copy[e[0]][e[1]]['edgetype'] = 'd'
         return graph_copy
 
     def prune_dead_edges(self,graph, runs=25):
