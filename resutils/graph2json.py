@@ -89,7 +89,7 @@ def transform_network_to_circuit(graph, inels=[], outels=[], contels=[],mobility
         idk = node
         lst = ["R", idk, elemceil, 0, elemid, "0", "40.0", "0.0", "0.0", "0.0", "0.5"]
         doc[elemid] = lst
-        inputids.append(elemid)
+        controlids.append(elemid)
 
     for node in outels:
         elemid += 1
