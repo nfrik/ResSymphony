@@ -47,8 +47,9 @@ class NetworkFitter():
 
         return key
 
-    def make_step(self,key,X,inputids,outputids,eq_time,utils):
+    def make_step(self,key,X,inputids,controlids,outputids,eq_time,utils):
 
+        inputids+=controlids
         for inputid, idnum in zip(inputids, range(len(inputids))):
             response = utils.setElementProperty(key, str(inputid), "maxVoltage",
                                                 str(X[idnum]))
