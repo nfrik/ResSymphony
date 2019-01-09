@@ -49,8 +49,8 @@ class NetworkFitter():
 
     def make_step(self,key,X,inputids,controlids,outputids,eq_time,utils):
 
-        inputids+=controlids
-        for inputid, idnum in zip(inputids, range(len(inputids))):
+        vinids=inputids+controlids
+        for inputid, idnum in zip(vinids, range(len(vinids))):
             response = utils.setElementProperty(key, str(inputid), "maxVoltage",
                                                 str(X[idnum]))
 
@@ -368,7 +368,7 @@ def main():
 
 
     key = nf.init_steps(circ['circuit'],utils)
-    out1=nf.make_step(key,[1,2],0,circ['inputids'],circ['outputids'],0.0001,utils)
+    out1=nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
     out2=nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
     out3=nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
     nf.complete_steps(key,utils)
