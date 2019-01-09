@@ -6,7 +6,7 @@ import json
 import resutils.nxgtutils as nxutils
 
 
-def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, Ron_pnm=100,Roff_pnm=1000, nw_res_per_nm=0.005, junct_res_per_nm=25, t_step="5e-6", scale=1e-9,elemceil = 10000,randomized_mem_width=False):
+def transform_network_to_circuit(graph, inels=[], outels=[], contels=[],mobility = 2.56E-9, Ron_pnm=100,Roff_pnm=1000, nw_res_per_nm=0.005, junct_res_per_nm=25, t_step="5e-6", scale=1e-9,elemceil = 10000,randomized_mem_width=False):
     pos3d = nx.get_node_attributes(graph, 'pos3d')
     #     el_type='m'
     rndmzd = randomized_mem_width
@@ -69,8 +69,19 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, Ron_p
 
     inputids = []
     outputids = []
+    controlids = []
 
     for node in inels:
+        elemid += 1
+        elemceil -= 1
+        # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]1
+        #         idk=random.choice(inels[k])
+        idk = node
+        lst = ["R", idk, elemceil, 0, elemid, "0", "40.0", "0.0", "0.0", "0.0", "0.5"]
+        doc[elemid] = lst
+        inputids.append(elemid)
+
+    for node in contels:
         elemid += 1
         elemceil -= 1
         # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]1
@@ -99,6 +110,7 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, Ron_p
     result['circuit'] = json.dumps(doc)
     result['inputids'] = [f for f in inputids]
     result['outputids'] = [f for f in outputids]
+    result['controlids'] = [f for f in controlids]
 
     return result
 
@@ -108,7 +120,7 @@ def transform_network_to_circuit(graph, inels, outels, mobility = 2.56E-9, Ron_p
 #     for k in inels.keys():
 #         wires= list(itertools.combinations(inels[k],2))
 #         for wire in wires:
-def transform_network_to_circuit_plain(graph, inels, outels, t_step="5e-6", scale=1e-9):
+def transform_network_to_circuit_plain(graph, inels=[], outels=[], t_step="5e-6", scale=1e-9):
     pos3d = nx.get_node_attributes(graph, 'pos3d')
     rndmzd = False
     Ron = 5000.
@@ -186,6 +198,8 @@ def transform_network_to_circuit_plain(graph, inels, outels, t_step="5e-6", scal
         elemceil -= 1
         lst = ["g", elemsav, elemceil, 0, 0]
         doc[elemid] = lst
+
+
 
     result = {}
     result['circuit'] = json.dumps(doc)
