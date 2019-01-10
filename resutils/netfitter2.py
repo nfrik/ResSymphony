@@ -225,12 +225,12 @@ class NetworkFitter():
         return logreg.score(X, y)
 
     def logreg_fit_mat(self, inmat, rescale=False):
+        y = np.array(inmat)[:, -1]
         if rescale:
             std_scaler = StandardScaler()
             std_scaler.fit(inmat)
             inmat = std_scaler.transform(inmat)
         X = np.array(inmat)[:, :-1]
-        y = np.array(inmat)[:, -1]
         logreg = linear_model.LogisticRegression(C=300.5, verbose=True, tol=1e-8, fit_intercept=True)
         logreg.fit(X, y)
 
