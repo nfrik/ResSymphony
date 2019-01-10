@@ -109,6 +109,45 @@ class NetworkFitter():
         outvals.append(y)
         return outvals
 
+    def run_single_sim_control(self, X, y, control, inputids, outputids, controlids, jsonstr, eq_time, utils, perturb=False):
+        response = utils.createNewSimulation()
+
+        # print(response)
+        logger.debug(response)
+        key = json.loads(response)["key"]
+        response = utils.loadCircuitFromGraphString(key, jsonstr)
+        # print(response)
+        logger.debug(response)
+        # resutils.start(key)
+        inoutvals = {}
+        # print("Setting up inputs:", X, "for outputs:",y)
+        logger.debug("Setting up inputs: {} for outputs: {} and control: {}".format(X, y, control))
+
+        for inputid, idnum in zip(inputids, range(len(inputids))):
+            response = utils.setElementProperty(key, str(inputid), "maxVoltage",
+                                                str(X[idnum]))
+
+        for controlid, idnum in zip(controlids, range(len(controlids))):
+            response = utils.setElementProperty(key, str(controlid), "maxVoltage",
+                                                str(control[idnum]))
+
+        # print("Waiting to equilibrate: {} secs".format(eq_time))
+        logger.info("Waiting to equilibrate: {} secs".format(eq_time))
+        utils.startForAndWait(key, eq_time)
+        utils.stop(key)
+
+        outvals = []
+        # print("Done equilibrating, reading output values")
+        logger.info("Done equilibrating, reading output values")
+        for outid in outputids:
+            response = utils.getCurrent(key, str(outid))
+            curval = json.loads(response)['value']
+            # print("Output current vals: ", curval)
+            outvals.append(curval)
+        utils.kill(key)
+        outvals.append(y)
+        return outvals
+
     def run_single_sim_series(self, X, y, inputids, outputids, jsonstr, eq_time, utils, repeat=1):
         response = utils.createNewSimulation()
         # print(response)
@@ -198,6 +237,39 @@ class NetworkFitter():
                                    zip(X, y,
                                        repeat(inputids),
                                        repeat(outputids),
+                                       repeat(jsonstr),
+                                       repeat(self.eq_time),
+                                       repeat(utils)))
+
+        for outval in outvals:
+            results.append(outval)
+
+        return results
+
+    def network_eval_control(self, X, y, control, circ="", n_jobs=0):
+        if circ != "":
+            self.circuit = circ
+        jsonstr = self.circuit['circuit']
+        inputids = self.circuit['inputids']
+        outputids = self.circuit['outputids']
+
+        controlids = []
+        if len(control) >0:
+            controlids = self.circuit['controlids']
+
+        utils = utilities.Utilities(serverUrl=self.serverUrl)
+
+        results = []
+
+        if n_jobs == 0:
+            n_jobs = len(y)
+
+        with mp.pool.ThreadPool(processes=n_jobs) as pool:
+            outvals = pool.starmap(self.run_single_sim_control,
+                                   zip(X, y, control,
+                                       repeat(inputids),
+                                       repeat(outputids),
+                                       repeat(controlids),
                                        repeat(jsonstr),
                                        repeat(self.eq_time),
                                        repeat(utils)))
