@@ -312,7 +312,7 @@ class NetworkFitter():
 
         return logreg.score(X, y)
 
-    def generate_random_net(self, n=20, p=2, k=4, net_type='ws', plot=False):
+    def generate_random_net(self, n=20, p=2, k=4, rmp=0.1, net_type='ws', plot=False):
         # G = nx.complete_graph(10)
         # G = nx.fast_gnp_random_graph(n=n,p=p)
         if net_type == 'ws':
@@ -320,7 +320,7 @@ class NetworkFitter():
         elif net_type == 'ba':
             G = nx.barabasi_albert_graph(n=n, p=p)
         elif net_type == 'sq':
-            G = ngut.generate_lattice(n=n, dim=2, rmp=0.1, periodic=False)
+            G = ngut.generate_lattice(n=n, dim=2, rmp=rmp, periodic=False)
 
         # print("Total edges generated", len(G.edges()))
         logger.info("Total edges generated" + str(len(G.edges())))
