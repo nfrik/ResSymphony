@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='ressymphony',
-      version='0.3.5c',
+      version='0.3.5d',
       description='Controller for CircuitSymphony - distributed SPICE',
       url='https://github.com/nfrik/ResSymphony',
       author='Nikolay Frick',

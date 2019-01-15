@@ -330,7 +330,7 @@ class NetworkFitter():
             plt.show()
         return G
 
-    def generate_random_net_circuit(self, n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndmzd=False, net_type='ws', \
+    def generate_random_net_circuit(self, n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndmzd=False, rmp=0.1, net_type='ws', \
                                     Ron=500,Roff=10000,dopwidth=0,totwidth=1.0E-8,mobility=1.0E-10,drainres=100,t_step="5e-6"):
 
         # memristor base configuration
@@ -344,7 +344,7 @@ class NetworkFitter():
 
         elemceil = 100000  # maximum id of element
 
-        G = self.generate_random_net(n=n, p=p, k=k, net_type=net_type)
+        G = self.generate_random_net(n=n, p=p, k=k, rmp=rmp, net_type=net_type)
         edges = G.edges()
         doc = {}
         doc[0] = ['$', 1, t_step, 10.634267539816555, 43, 2.0, 50]
