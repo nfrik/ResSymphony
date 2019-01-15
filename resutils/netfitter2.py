@@ -330,7 +330,7 @@ class NetworkFitter():
             plt.show()
         return G
 
-    def generate_random_net_circuit(self, n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndmzd=False, rmp=0.1, net_type='ws', \
+    def generate_random_net_circuit(self, n=10, p=2, k=4, nin=2, nout=2,ncont=0, el_type='m', rndmzd=False, rmp=0.1, net_type='ws', \
                                     Ron=500,Roff=10000,dopwidth=0,totwidth=1.0E-8,mobility=1.0E-10,drainres=100,t_step="5e-6"):
 
         # memristor base configuration
@@ -361,12 +361,13 @@ class NetworkFitter():
 
         nodes = list(G.nodes)
 
-        inoutnodes = random.sample(nodes, nin + nout)
+        inoutcontnodes = random.sample(nodes, nin + nout + ncont)
 
         inputids = []
         outputids = []
+        controlids = []
 
-        for k in inoutnodes[:nin]:
+        for k in inoutcontnodes[:nin]:
             elemid += 1
             elemceil -= 1
             # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]
@@ -374,7 +375,7 @@ class NetworkFitter():
             doc[elemid] = lst
             inputids.append(elemid)
 
-        for k in inoutnodes[nin:nin + nout]:
+        for k in inoutcontnodes[nin:nin + nout]:
             elemid += 1
             elemceil -= 1
             lst = ["r", k, elemceil, 0, elemid, str(drainres)]
@@ -387,10 +388,19 @@ class NetworkFitter():
             lst = ["g", elemsav, elemceil, 0, 0]
             doc[elemid] = lst
 
+        for k in inoutcontnodes[nin+nout:nin + nout + ncont]:
+            elemid += 1
+            elemceil -= 1
+            # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]
+            lst = ["R", k, elemceil, 0, elemid, "0", "40.0", "0.01", "0.0", "0.0", "0.5"]
+            doc[elemid] = lst
+            controlids.append(elemid)
+
         result = {}
         result['circuit'] = json.dumps(doc)
         result['inputids'] = inputids
         result['outputids'] = outputids
+        result['controlids'] = controlids
 
         return result, G
 
