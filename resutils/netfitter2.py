@@ -331,7 +331,7 @@ class NetworkFitter():
         return G
 
     def generate_random_net_circuit(self, n=10, p=2, k=4, nin=2, nout=2,ncont=0, el_type='m', rndmzd=False, rmp=0.1, net_type='ws', \
-                                    Ron=500,Roff=10000,dopwidth=0,totwidth=1.0E-8,mobility=1.0E-10,drainres=100,t_step="5e-6"):
+                                    Ron=500,Roff=10000,dopwidth=0,totwidth=1.0E-8,totwidth_rnd_delta=5.,mobility=1.0E-10,drainres=100,t_step="5e-6"):
 
         # memristor base configuration
         Ron = Ron
@@ -351,9 +351,9 @@ class NetworkFitter():
         for elemid, ed in enumerate(edges, 1):
             # lst=["m",e[0],e[1],0,i,"100.0","32000.0","0.0","1.0E-8","1.0E-10"]
             if el_type == 'm':
-                totwidth_rnd = totwidth + random.uniform(-totwidth / 5., totwidth / 5.)
+                totwidth_rnd = totwidth + random.uniform(-totwidth / totwidth_rnd_delta, totwidth / totwidth_rnd_delta)
                 dopwidth_rnd = random.uniform(0., totwidth_rnd)
-                lst = ["m", ed[0], ed[1], 0, elemid, str(Ron), str(Roff), str(dopwidth if rndmzd else dopwidth_rnd),
+                lst = ["m", ed[0], ed[1], 0, elemid, str(Ron), str(Roff), str(dopwidth_rnd if rndmzd else dopwidth),
                        str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
             elif el_type == 'd':
                 lst = ["d", ed[0], ed[1], 1, elemid, "0.805904"]
