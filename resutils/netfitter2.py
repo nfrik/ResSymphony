@@ -354,7 +354,7 @@ class NetworkFitter():
                 totwidth_rnd = totwidth + random.uniform(-totwidth / totwidth_rnd_delta, totwidth / totwidth_rnd_delta)
                 dopwidth_rnd = random.uniform(0., totwidth_rnd)
                 lst = ["m", ed[0], ed[1], 0, elemid, str(Ron), str(Roff), str(dopwidth_rnd if rndmzd else dopwidth),
-                       str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
+                       str(totwidth_rnd if rndmzd else totwidth), str(mobility)]
             elif el_type == 'd':
                 lst = ["d", ed[0], ed[1], 1, elemid, "0.805904"]
             doc[elemid] = lst
