@@ -34,6 +34,7 @@ class Percolator:
         # Percolator.serverUrl_uuid = serverUrl+"uuid/"
 
     def get_default_config(self):
+
         defconfig = {
             "cylinder": {
                 "angleDev": 0,
