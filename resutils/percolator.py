@@ -120,6 +120,18 @@ class Percolator:
             #     "showBox": False,
             #     "showContacts": False,
             #     "showObjects": False
+            },
+            "group": {
+                "angleDev": 0,
+                "angleX": 0,
+                "angleZ": 0,
+                "enabled": False,
+                "groupsLatticeEnabled": False,
+                "groupsLatticeX": 0,
+                "groupsLatticeY": 0,
+                "groupsLatticeZ": 0,
+                "number": 0,
+                "sticky": False
             }
         }
 
