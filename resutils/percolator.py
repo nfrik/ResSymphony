@@ -79,7 +79,8 @@ class Percolator:
                 # },
                 "boxAngleX":0,
                 "boxAngleY":0,
-                "cfm": 0,
+                "cfm": 1E-11,
+                "erp": 0.3,
                 "is3D": False,
                 "proximity": 2,
                 "seed": 0,
@@ -1054,7 +1055,8 @@ def main():
     ins=circ['inputids']
     outs=circ['outputids']
 
-    nf = netfitter.NetworkFitter(serverUrl="http://spartan.mse.ncsu.edu:8090/symphony/")
+    # nf = netfitter.NetworkFitter(serverUrl="http://spartan.mse.ncsu.edu:8090/symphony/")
+    nf = netfitter.NetworkFitter(serverUrl="http://landau-nic0.mse.ncsu.edu:15833/symphony/")
     nf.eq_time = 0.01
     circ = modify_integration_time(circ, set_val='1e-5')
     nf.circuit = circ
