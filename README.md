@@ -1,4 +1,2 @@
-# ResSymphony
-Python wrapper for CircuitSymphony.
-
-You must have CircuitSymphony and percolator servers configured and running in order to use this interface
+ResSymphony
+Python wrapper for CircuitSymphony and Percolator suite for generating networks of arbitrary shape particles in 3D and analyzing conductivity. This wrapper access CircuitSymphony and Percolator servers via REST API.
