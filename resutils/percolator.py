@@ -34,6 +34,7 @@ class Percolator:
         # Percolator.serverUrl_uuid = serverUrl+"uuid/"
 
     def get_default_config(self):
+
         defconfig = {
             "cylinder": {
                 "angleDev": 0,
@@ -78,7 +79,8 @@ class Percolator:
                 # },
                 "boxAngleX":0,
                 "boxAngleY":0,
-                "cfm": 0,
+                "cfm": 1E-11,
+                "erp": 0.3,
                 "is3D": False,
                 "proximity": 2,
                 "seed": 0,
@@ -120,6 +122,18 @@ class Percolator:
             #     "showBox": False,
             #     "showContacts": False,
             #     "showObjects": False
+            },
+            "group": {
+                "angleDev": 0,
+                "angleX": 0,
+                "angleZ": 0,
+                "enabled": False,
+                "groupsLatticeEnabled": False,
+                "groupsLatticeX": 0,
+                "groupsLatticeY": 0,
+                "groupsLatticeZ": 0,
+                "number": 0,
+                "sticky": False
             }
         }
 
@@ -1041,7 +1055,8 @@ def main():
     ins=circ['inputids']
     outs=circ['outputids']
 
-    nf = netfitter.NetworkFitter(serverUrl="http://spartan.mse.ncsu.edu:8090/symphony/")
+    # nf = netfitter.NetworkFitter(serverUrl="http://spartan.mse.ncsu.edu:8090/symphony/")
+    nf = netfitter.NetworkFitter(serverUrl="http://landau-nic0.mse.ncsu.edu:15833/symphony/")
     nf.eq_time = 0.01
     circ = modify_integration_time(circ, set_val='1e-5')
     nf.circuit = circ

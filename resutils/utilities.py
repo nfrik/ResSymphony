@@ -110,6 +110,14 @@ class Utilities:
 
         return json.loads(json.dumps(response.text))
 
+    def getElementsIVs(key):
+        # post
+        url = Utilities.serverUrl + "simulations/" + key + "/elements"
+
+        response = requests.request("GET", url)
+
+        return json.loads(json.dumps(response.text))
+
     # Changes specified element property to a given value
     def setElementProperty(self,key,elementId, propertyKey, newValue):
         url = Utilities.serverUrl + "simulations/" + key + "/element/" + elementId+"/property"
