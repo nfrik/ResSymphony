@@ -110,7 +110,7 @@ class Utilities:
 
         return json.loads(json.dumps(response.text))
 
-    def getElementsIVs(key):
+    def getElementsIVs(self, key):
         # post
         url = Utilities.serverUrl + "simulations/" + key + "/elements"
 
