@@ -74,7 +74,7 @@ def transform_network_to_circuit(graph, inels=[], outels=[], contels=[],mobility
     for node in inels:
         elemid += 1
         elemceil -= 1
-        # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]1
+        # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]
         #         idk=random.choice(inels[k])
         idk = node
         lst = ["R", idk, elemceil, 0, elemid, "0", "40.0", "0.0", "0.0", "0.0", "0.5"]
