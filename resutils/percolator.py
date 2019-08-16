@@ -19,6 +19,9 @@ from resutils import netfitter2 as netfitter
 from scipy import signal
 from posixpath import join as urljoin
 from collections import OrderedDict
+import matplotlib.cm as cm
+from matplotlib.colors import Normalize
+import matplotlib.cm as cmx
 
 import requests
 import json
@@ -754,6 +757,95 @@ class Percolator:
         ax.set_zlabel(zslabel)
         ax.view_init(elev=20, azim=90)
         plt.show()
+        return ax
+
+    def plot_pos3d_lightning(self,graph=None, ax=None, title='', is3d=True, plot_wires=True, save_as=None, elev=20, azim=90,
+                   max_current=1,cmap='jet'):
+        pos3d = nx.get_node_attributes(graph, 'pos3d')
+        #     max_current=np.max(np.abs(list(nx.get_edge_attributes(graph,'current').values())))
+        max_line_width = 4
+        min_line_width = 0.1
+        jet = cm = plt.get_cmap(cmap)
+        cNorm = Normalize(vmin=-max_current, vmax=max_current)
+        scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+
+        if ax == None:
+            fig = plt.figure(figsize=(10, 10))
+            #         ax = fig.gca(projection="3d")
+            ax = fig.add_subplot(111, projection='3d')
+        #         ax.scatter(xs, ys, zs, c='r', s=5)
+        # ax.plot(xs,ys,zs, color='r')
+        for e in graph.edges():
+            x1 = pos3d[e[0]][0]
+            y1 = pos3d[e[0]][1]
+            z1 = pos3d[e[0]][2] if is3d else 0.
+            x2 = pos3d[e[1]][0]
+            y2 = pos3d[e[1]][1]
+            z2 = pos3d[e[1]][2] if is3d else 0.
+            x = [x1, x2]
+            y = [y1, y2]
+            z = [z1, z2]
+            edgetype = {}
+
+            try:
+                edgetype = graph[e[0]][e[1]]['edgetype']
+                edgecurrent = graph[e[0]][e[1]]['current']
+                colorVal = scalarMap.to_rgba(abs(edgecurrent))
+
+                do_plot = True
+
+                if ('w' in edgetype):
+                    if not plot_wires:
+                        do_plot = False
+                        pass
+
+                if do_plot:
+                    lw = abs(edgecurrent / max_current) * max_line_width
+                    lw = min_line_width if lw < min_line_width else lw
+
+                    p = ax.plot(x, y, z, color=colorVal, linewidth=lw)
+
+            #             if 'm' in edgetype:
+            #                 ax.plot(x, y, z, c='b', label='memristor')
+            #             elif 'r' in edgetype:
+            #                 ax.plot(x, y, z, c='m', label='resistor')
+            #             elif 'w' in edgetype:
+            #                 if plot_wires:
+            #                     ax.plot(x, y, z, c='g', label='wire')
+            #             elif 'd' in edgetype:
+            #                 ax.plot(x, y, z, c='orange', label='diode')
+            except:
+                ax.plot(x, y, z, c='k')
+                pass
+
+        # Remove background axis color
+        ax.set_facecolor((0, 0, 0, 0))
+        ax.xaxis.pane.set_edgecolor('w')
+        ax.yaxis.pane.set_edgecolor('w')
+        ax.zaxis.pane.set_edgecolor('w')
+        ax.xaxis.pane.fill = False
+        ax.yaxis.pane.fill = False
+        ax.zaxis.pane.fill = False
+        # Bonus: To get rid of the grid as well:
+        ax.grid(False)
+
+        plt.title(title)
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys())
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_zlabel("z")
+        ax.view_init(elev=elev, azim=azim)
+        ax.set_axis_off()
+        ax.dist = 5
+        #     sm = plt.cm.ScalarMappable(cmap=cm, norm=plt.Normalize(vmin=-0.001, vmax=0.001))
+        #     plt.colorbar(sm)
+        if save_as == None:
+            plt.show()
+        else:
+            fig.savefig(save_as)
+            plt.close()
         return ax
 
     def plot_pos3d(self,graph=None, ax=None, title='', is3d=True,plot_wires=True):

@@ -6,6 +6,146 @@ import json
 import resutils.nxgtutils as nxutils
 
 
+def get_currents_for_graph(graph,circuit,currents):
+
+    elcur={}
+    for element in json.loads(currents)['elements']:
+        elcur[element['elementId']]=element['current']
+
+    dutcirc=json.loads(circuit['circuit'])
+
+    for k in list(dutcirc.keys())[1:]:
+        dutcirc[k]
+        ed=(dutcirc[k][1],dutcirc[k][2])
+        eid=dutcirc[k][4]
+        if dutcirc[k][0] not in ['R','g']:
+            try:
+                cur=elcur[eid]
+                graph.edges()[ed]['elementid']=eid
+                graph.edges()[ed]['current']=cur
+            except:
+#                 print("Auxilary element {} can't be used in the circuit".format(dutcirc[k]))
+                pass
+
+    return graph
+
+def transform_network_to_circuit_res_cutoff(graph, inels=[], outels=[], contels=[], mobility=2.56E-9, Ron_pnm=100,
+                                            Roff_pnm=1000, nw_res_per_nm=0.005, junct_res_per_nm=25, t_step="5e-6",
+                                            scale=1e-9, elemceil=10000, randomized_mem_width=False,
+                                            mem_cutoff_len_nm=10):
+    pos3d = nx.get_node_attributes(graph, 'pos3d')
+    #     el_type='m'
+    rndmzd = randomized_mem_width
+    # memristor base configuration
+
+    #     Ron = 500.
+    #     Roff = 100000.
+    #     totwidth = 1.0E-8
+    #     dopwidth = 0.5*totwidth
+
+    drainres = 100
+
+    elemceil = elemceil  # maximum id of element
+
+    edges = graph.edges()
+    elemtypes = nx.get_edge_attributes(graph, 'edgetype')
+    elemclasses = nx.get_edge_attributes(graph, 'edgeclass')
+    doc = {}
+    doc[0] = ['$', 1, t_step, 10.634267539816555, 43, 2.0, 50]
+
+    mnresistances = []
+    mxresistances = []
+    mrresistances = []
+    for elemid, e in enumerate(edges, 1):
+
+        # lst=["m",e[0],e[1],0,i,"100.0","32000.0","0.0","1.0E-8","1.0E-10"]
+        p1 = np.array(pos3d[e[0]])
+        p2 = np.array(pos3d[e[1]])
+        length = np.linalg.norm(p1 - p2) * scale * 1e9
+        # totwidth = length * 1e-9
+        # dopwidth = length * 0.5 * 1e-9
+        totwidth = length * 1e-9
+        dopwidth = length * 0.5 * 1e-9
+        Ron = Ron_pnm * length
+        Roff = Roff_pnm * length
+        try:
+            el_type = elemtypes[e]
+            el_class = elemclasses[e]
+        except:
+            el_type = 'w'
+            print("Can't obtain edge properties")
+            pass
+        if el_type == 'm' and length > mem_cutoff_len_nm:
+            totwidth_rnd = totwidth  # + random.uniform(-totwidth / 5., totwidth / 5.)
+            dopwidth_rnd = random.uniform(0., totwidth_rnd)
+            mxresistances.append(Roff)
+            mnresistances.append(Ron)
+            lst = ["m", e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth_rnd if rndmzd else dopwidth),
+                   str(totwidth_rnd if rndmzd else totwidth), str(mobility)]
+        elif el_type == 'r' or (el_type == 'm' and length <= mem_cutoff_len_nm):
+            if 'air' in el_class:
+                lst = ['r', e[0], e[1], 0, elemid, str(length * junct_res_per_nm)]
+            else:
+                mrresistances.append(length * nw_res_per_nm)
+                lst = ['r', e[0], e[1], 0, elemid, str(length * nw_res_per_nm)]
+        elif el_type == 'd':
+            lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
+        elif el_type == 'w':
+            lst = ["w", e[0], e[1], 1, elemid]
+        doc[elemid] = lst
+
+    # nodes = list(G.nodes)
+
+    #     inoutnodes = random.sample(nodes, nin + nout)
+
+    inputids = []
+    outputids = []
+    controlids = []
+
+    for node in inels:
+        elemid += 1
+        elemceil -= 1
+        # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]
+        #         idk=random.choice(inels[k])
+        idk = node
+        lst = ["R", idk, elemceil, 0, elemid, "0", "40.0", "0.0", "0.0", "0.0", "0.5"]
+        doc[elemid] = lst
+        inputids.append(elemid)
+
+    for node in contels:
+        elemid += 1
+        elemceil -= 1
+        # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]1
+        #         idk=random.choice(inels[k])
+        idk = node
+        lst = ["R", idk, elemceil, 0, elemid, "0", "40.0", "0.0", "0.0", "0.0", "0.5"]
+        doc[elemid] = lst
+        controlids.append(elemid)
+
+    for node in outels:
+        elemid += 1
+        elemceil -= 1
+        #         idk=random.choice(outels[k])
+        idk = node
+        lst = ["r", idk, elemceil, 0, elemid, str(drainres)]
+        doc[elemid] = lst
+        outputids.append(elemid)
+
+        elemid += 1
+        elemsav = elemceil
+        elemceil -= 1
+        lst = ["g", elemsav, elemceil, 0, 0]
+        doc[elemid] = lst
+
+    result = {}
+    result['circuit'] = json.dumps(doc)
+    result['inputids'] = [f for f in inputids]
+    result['outputids'] = [f for f in outputids]
+    result['controlids'] = [f for f in controlids]
+
+    return result
+
+
 def transform_network_to_circuit(graph, inels=[], outels=[], contels=[],mobility = 2.56E-9, Ron_pnm=100,Roff_pnm=1000, nw_res_per_nm=0.005, junct_res_per_nm=25, t_step="5e-6", scale=1e-9,elemceil = 10000,randomized_mem_width=False):
     pos3d = nx.get_node_attributes(graph, 'pos3d')
     #     el_type='m'
