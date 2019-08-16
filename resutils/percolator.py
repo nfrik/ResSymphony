@@ -760,7 +760,7 @@ class Percolator:
         return ax
 
     def plot_pos3d_lightning(self,graph=None, ax=None, title='', is3d=True, plot_wires=True, save_as=None, elev=20, azim=90,
-                   max_current=1,cmap='jet'):
+                   max_current=1,cmap='jet',dist=10):
         pos3d = nx.get_node_attributes(graph, 'pos3d')
         #     max_current=np.max(np.abs(list(nx.get_edge_attributes(graph,'current').values())))
         max_line_width = 4
@@ -838,7 +838,7 @@ class Percolator:
         ax.set_zlabel("z")
         ax.view_init(elev=elev, azim=azim)
         ax.set_axis_off()
-        ax.dist = 5
+        ax.dist = dist
         #     sm = plt.cm.ScalarMappable(cmap=cm, norm=plt.Normalize(vmin=-0.001, vmax=0.001))
         #     plt.colorbar(sm)
         if save_as == None:
