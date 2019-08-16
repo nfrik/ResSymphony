@@ -29,8 +29,9 @@ def get_currents_for_graph(graph,circuit,currents):
 
     return graph
 
+
 def transform_network_to_circuit_res_cutoff(graph, inels=[], outels=[], contels=[], mobility=2.56E-9, Ron_pnm=100,
-                                            Roff_pnm=1000, nw_res_per_nm=0.005, junct_res_per_nm=25, t_step="5e-6",
+                                            Roff_pnm=1000, nw_res_per_nm=0.005, junct_res_per_nm=500, t_step="5e-6",
                                             scale=1e-9, elemceil=10000, randomized_mem_width=False,
                                             mem_cutoff_len_nm=10):
     pos3d = nx.get_node_attributes(graph, 'pos3d')
@@ -42,6 +43,8 @@ def transform_network_to_circuit_res_cutoff(graph, inels=[], outels=[], contels=
     #     Roff = 100000.
     #     totwidth = 1.0E-8
     #     dopwidth = 0.5*totwidth
+
+    add_junct_res_to_wire = 'air' in nx.get_edge_attributes(graph,'edgeclass').values()
 
     drainres = 100
 
@@ -87,7 +90,7 @@ def transform_network_to_circuit_res_cutoff(graph, inels=[], outels=[], contels=
                 lst = ['r', e[0], e[1], 0, elemid, str(length * junct_res_per_nm)]
             else:
                 mrresistances.append(length * nw_res_per_nm)
-                lst = ['r', e[0], e[1], 0, elemid, str(length * nw_res_per_nm)]
+                lst = ['r', e[0], e[1], 0, elemid, str(length * nw_res_per_nm + junct_res_per_nm if add_junct_res_to_wire else 0)]
         elif el_type == 'd':
             lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
         elif el_type == 'w':

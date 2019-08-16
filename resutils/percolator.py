@@ -953,9 +953,9 @@ class Percolator:
                 ax.plot(x, y, z, colors[n])
         return ax
 
-    def plot_electrode_boxes(self,ax=None, el_array=None):
+    def plot_electrode_boxes(self,ax=None, el_array=None,cols=['k', 'g', 'b', 'r', 'c', 'm', 'y', 'k']):
         #     x1, x2 = xmax - xdelta, xmax + xdelta
-        colors = ['k', 'g', 'b', 'r', 'c', 'm', 'y', 'k'] * 10
+        colors = cols * 10
         if ax == None:
             fig = plt.figure(figsize=(10, 10))
             ax = fig.gca(projection="3d")
