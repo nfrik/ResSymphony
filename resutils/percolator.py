@@ -760,11 +760,11 @@ class Percolator:
         return ax
 
     def plot_pos3d_lightning(self,graph=None, ax=None, title='', is3d=True, plot_wires=True, save_as=None, elev=20, azim=90,
-                   max_current=1,cmap='jet',dist=10):
+                             max_current=1, cmap='jet', dist=5, max_line_width=5, min_line_width=0.4, electrodes=[]):
         pos3d = nx.get_node_attributes(graph, 'pos3d')
         #     max_current=np.max(np.abs(list(nx.get_edge_attributes(graph,'current').values())))
-        max_line_width = 4
-        min_line_width = 0.1
+        #     max_line_width = 5
+        #     min_line_width = 0.4
         jet = cm = plt.get_cmap(cmap)
         cNorm = Normalize(vmin=-max_current, vmax=max_current)
         scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
@@ -790,7 +790,7 @@ class Percolator:
             try:
                 edgetype = graph[e[0]][e[1]]['edgetype']
                 edgecurrent = graph[e[0]][e[1]]['current']
-                colorVal = scalarMap.to_rgba(abs(edgecurrent))
+                #             colorVal = scalarMap.to_rgba(abs(edgecurrent))
 
                 do_plot = True
 
@@ -803,7 +803,16 @@ class Percolator:
                     lw = abs(edgecurrent / max_current) * max_line_width
                     lw = min_line_width if lw < min_line_width else lw
 
-                    p = ax.plot(x, y, z, color=colorVal, linewidth=lw)
+                    if 'm' in edgetype:
+                        p = ax.plot(x, y, z, color='r', linewidth=lw)
+                    #                     p = ax.scatter(x1, y1, z1, c='r',s=lw)
+                    else:
+                        p = ax.plot(x, y, z, color='g', linewidth=lw)
+
+            #                 if 'm' in edgetype:
+            #                     p = ax.plot(x, y, z, color=scalarMap.to_rgba(abs(edgecurrent)), linewidth=lw)
+            #                 else:
+            #                     p = ax.plot(x, y, z, color=scalarMap.to_rgba(abs(0)), linewidth=lw)
 
             #             if 'm' in edgetype:
             #                 ax.plot(x, y, z, c='b', label='memristor')
@@ -841,6 +850,9 @@ class Percolator:
         ax.dist = dist
         #     sm = plt.cm.ScalarMappable(cmap=cm, norm=plt.Normalize(vmin=-0.001, vmax=0.001))
         #     plt.colorbar(sm)
+        for el, col in zip(electrodes, ['y', 'b', 'g', 'r', 'c', 'm'] * 50):
+            self.plot_electrode_boxes(ax=ax, el_array=el, cols=[col])
+
         if save_as == None:
             plt.show()
         else:
@@ -953,7 +965,7 @@ class Percolator:
                 ax.plot(x, y, z, colors[n])
         return ax
 
-    def plot_electrode_boxes(self,ax=None, el_array=None,cols=['k', 'g', 'b', 'r', 'c', 'm', 'y', 'k']):
+    def plot_electrode_boxes(ax=None, el_array=None, cols=['k', 'g', 'b', 'r', 'c', 'm', 'y', 'k']):
         #     x1, x2 = xmax - xdelta, xmax + xdelta
         colors = cols * 10
         if ax == None:

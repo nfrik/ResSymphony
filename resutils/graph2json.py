@@ -44,7 +44,7 @@ def transform_network_to_circuit_res_cutoff(graph, inels=[], outels=[], contels=
     #     totwidth = 1.0E-8
     #     dopwidth = 0.5*totwidth
 
-    add_junct_res_to_wire = 'air' in nx.get_edge_attributes(graph,'edgeclass').values()
+    add_junct_res_to_wire = 'air' not in nx.get_edge_attributes(graph,'edgeclass').values()
 
     drainres = 100
 
