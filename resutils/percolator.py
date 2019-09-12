@@ -558,7 +558,7 @@ class Percolator:
             G.remove_nodes_from(list(nx.isolates(G)))
         return G
 
-    def prune_dead_edges(self, graph, el_pan, runs=25):
+    def prune_dead_edges_el_pan(self, graph, el_pan, runs=25):
         G = graph.copy()
         nbs = []
         elect_nodes = list(np.ravel(el_pan))
