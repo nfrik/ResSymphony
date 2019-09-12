@@ -558,6 +558,24 @@ class Percolator:
             G.remove_nodes_from(list(nx.isolates(G)))
         return G
 
+    def prune_dead_edges(self, graph, el_pan, runs=25):
+        G = graph.copy()
+        nbs = []
+        elect_nodes = list(np.ravel(el_pan))
+        for run in range(runs):
+            for n in sorted([z for z in sorted(G.degree, key=lambda x: x[1], reverse=False) if z[1] == 1]):
+                nbs.append([n[0], list(G.neighbors(n[0]))[0]])
+
+            for nb in nbs:
+                if nb[0] not in elect_nodes and nb[1] not in elect_nodes:
+                    try:
+                        G.remove_edge(nb[0], nb[1])
+                    except:
+                        pass
+            # remove isolates
+            G.remove_nodes_from(list(nx.isolates(G)))
+        return G
+
     def plot_nxgraph(self,G, pos=None, edge_colors=None):
         plt.figure(figsize=(7, 7))
         if pos == None and edge_colors == None:
