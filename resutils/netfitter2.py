@@ -467,17 +467,17 @@ def xor_test():
     # out3 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
     nf.complete_steps(key, utils)
 
-    start = time.time()
-    nf.eq_time = 0.004
-    resx = nf.network_eval(X, y)
-    resutils.plott.plot3d(resx, circ['circuit'])
-    results = nf.logreg_fit(resx, y)
-    end = time.time() - start
-
-    print("Final result vector: ", np.sum(np.abs(results)))
-    print("Circuit size: ", len(json.loads(circ['circuit']).keys()))
-    print("Simulation time: ", end)
-    return results
+    # start = time.time()
+    # nf.eq_time = 0.004
+    # resx = nf.network_eval(X, y)
+    # resutils.plott.plot3d(resx, circ['circuit'])
+    # results = nf.logreg_fit(resx, y)
+    # end = time.time() - start
+    #
+    # print("Final result vector: ", np.sum(np.abs(results)))
+    # print("Circuit size: ", len(json.loads(circ['circuit']).keys()))
+    # print("Simulation time: ", end)
+    # return results
 
 def singularity_test():
     y = [1, 1]
@@ -503,8 +503,8 @@ def singularity_test():
     print(res)
 
 def main():
-    # singularity_test()
-    xor_test()
+    singularity_test()
+    # xor_test()
 
 def other_main():
     nf = NetworkFitter()
