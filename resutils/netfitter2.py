@@ -57,8 +57,9 @@ class NetworkFitter():
         # print("Waiting to equilibrate: {} secs".format(eq_time))
         logger.info("Waiting to equilibrate: {} secs".format(eq_time))
         response = utils.startForAndWait(key, eq_time)
-        if "Singular" in json.loads(response)['message']:
+        if "Singular".lower() in (json.loads(response)['message']).lower():
             raise ValueError("Singular Matrix");
+
         utils.stop(key)
 
         outvals = {}
@@ -439,7 +440,7 @@ def xor_test():
     # input['outputids'] = [203,205,207,209,211,213,215,217]
 
     nf = NetworkFitter()
-    utils = utilities.Utilities(serverUrl=nf.serverUrl)
+    utils = utilities.Utilities(serverUrl="http://10.152.17.144:8090/symphony/")#nf.serverUrl)
 
     circ, g = nf.generate_random_net_circuit(n=50, nin=2, nout=3)
 
@@ -452,9 +453,18 @@ def xor_test():
     # plott.plot_json_graph(circ['circuit'])
 
     key = nf.init_steps(circ['circuit'], utils)
-    out1 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
-    out2 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
-    out3 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
+
+    out1 = nf.make_step(key, X=[1,2], inputids=circ['inputids'], outputids=circ['outputids'],controlids=[], eq_time=0.0001, utils=utils)
+    out2 = nf.make_step(key, X=[1, 2], inputids=circ['inputids'], outputids=circ['outputids'], controlids=[],
+                        eq_time=0.0001, utils=utils)
+    out3 = nf.make_step(key, X=[1, 2], inputids=circ['inputids'], outputids=circ['outputids'], controlids=[],
+                        eq_time=0.0001, utils=utils)
+    out4 = nf.make_step(key, X=[1, 2], inputids=circ['inputids'], outputids=circ['outputids'], controlids=[],
+                        eq_time=0.0001, utils=utils)
+
+    # out1 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
+    # out2 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
+    # out3 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
     nf.complete_steps(key, utils)
 
     start = time.time()
@@ -493,7 +503,8 @@ def singularity_test():
     print(res)
 
 def main():
-    singularity_test()
+    # singularity_test()
+    xor_test()
 
 def other_main():
     nf = NetworkFitter()
