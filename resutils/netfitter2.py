@@ -56,7 +56,9 @@ class NetworkFitter():
 
         # print("Waiting to equilibrate: {} secs".format(eq_time))
         logger.info("Waiting to equilibrate: {} secs".format(eq_time))
-        utils.startForAndWait(key, eq_time)
+        response = utils.startForAndWait(key, eq_time)
+        if "Singular" in json.loads(response)['message']:
+            raise ValueError("Singular Matrix");
         utils.stop(key)
 
         outvals = {}
@@ -69,6 +71,7 @@ class NetworkFitter():
             outvals[outid]=curval
 
         return outvals
+
 
     def complete_steps(self,key,utils):
         utils.stop(key)
@@ -413,7 +416,7 @@ def perturb_X(X, boost=3, var=1):
     return Y
 
 
-def main():
+def xor_test():
     ttables = {}
     ttables['xor'] = [[-1, -1, 0], [-1, 1, 1], [1, -1, 1], [1, 1, 0]]
     ttables['or'] = [[-1, -1, 0], [-1, 1, 1], [1, -1, 1], [1, 1, 0]]
@@ -438,7 +441,7 @@ def main():
     nf = NetworkFitter()
     utils = utilities.Utilities(serverUrl=nf.serverUrl)
 
-    circ ,g = nf.generate_random_net_circuit(n=50, nin=2, nout=3)
+    circ, g = nf.generate_random_net_circuit(n=50, nin=2, nout=3)
 
     nf.circuit = circ
 
@@ -448,12 +451,11 @@ def main():
     y = data[:, -1]
     # plott.plot_json_graph(circ['circuit'])
 
-
-    key = nf.init_steps(circ['circuit'],utils)
-    out1=nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
-    out2=nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
-    out3=nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
-    nf.complete_steps(key,utils)
+    key = nf.init_steps(circ['circuit'], utils)
+    out1 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
+    out2 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
+    out3 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
+    nf.complete_steps(key, utils)
 
     start = time.time()
     nf.eq_time = 0.004
@@ -467,6 +469,31 @@ def main():
     print("Simulation time: ", end)
     return results
 
+def singularity_test():
+    y = [1, 1]
+
+    circ=json.load(open("/home/nifrick/PycharmProjects/ressymphony/resources/singular.json",'r'))
+
+    nf_lancuda = NetworkFitter(serverUrl="http://10.152.17.144:8090/symphony/")
+
+    utils = utilities.Utilities(serverUrl=nf_lancuda.serverUrl)
+    key = nf_lancuda.init_steps(circ['circuit'], utils)
+    res = {}
+
+    try:
+        for yval, n in tqdm_notebook(zip(y, range(len(y)))):
+            res[n] = nf_lancuda.make_step(key, X=[yval * 10000], inputids=circ['inputids'], outputids=circ['outputids'],
+                                          controlids=[], eq_time=0.0001, utils=utils)
+    except Exception as e:
+        print(e)
+
+    nf_lancuda.complete_steps(key, utils)
+    res = {0: res}
+
+    print(res)
+
+def main():
+    singularity_test()
 
 def other_main():
     nf = NetworkFitter()
