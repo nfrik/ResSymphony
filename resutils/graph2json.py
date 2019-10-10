@@ -467,7 +467,7 @@ def modify_integration_time(circ, set_val='1e-7'):
 #     #     plt.legend()
 #     # plt.show()
 
-def batch_plot_single_sim(res, title="",tstep=1,legend=False):
+def batch_plot_single_sim(res, title="",tstep=1,i_mul=1,legend=False):
     import matplotlib.ticker as mtick
     # plt.subplot(1,2,1)
     num_elects=len(res[0][0].keys())
@@ -479,7 +479,7 @@ def batch_plot_single_sim(res, title="",tstep=1,legend=False):
             y = [meas[k][list(meas[k].keys())[n]] for k in meas.keys()]
             x = list(tstep*np.arange(len(y)))
             xs.append(y)
-            plt.plot(x,y, label=str(list(meas[0].keys())[n]))
+            plt.plot(x,np.array(y)*i_mul, label=str(list(meas[0].keys())[n]))
     plt.title(title)
     plt.xlabel('sec')
     plt.ylabel('I(A)')
