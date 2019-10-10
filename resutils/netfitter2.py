@@ -98,7 +98,10 @@ class NetworkFitter():
 
         # print("Waiting to equilibrate: {} secs".format(eq_time))
         logger.info("Waiting to equilibrate: {} secs".format(eq_time))
-        utils.startForAndWait(key, eq_time)
+        # utils.startForAndWait(key, eq_time)
+        response = utils.startForAndWait(key, eq_time)
+        if "Singular".lower() in (json.loads(response)['message']).lower():
+            raise ValueError("Singular Matrix");
         utils.stop(key)
 
         outvals = []
@@ -137,7 +140,10 @@ class NetworkFitter():
 
         # print("Waiting to equilibrate: {} secs".format(eq_time))
         logger.info("Waiting to equilibrate: {} secs".format(eq_time))
-        utils.startForAndWait(key, eq_time)
+        # utils.startForAndWait(key, eq_time)
+        response = utils.startForAndWait(key, eq_time)
+        if "Singular".lower() in (json.loads(response)['message']).lower():
+            raise ValueError("Singular Matrix");
         utils.stop(key)
 
         outvals = []
@@ -172,7 +178,10 @@ class NetworkFitter():
 
             # print("Waiting to equilibrate: {} secs".format(eq_time))
             logger.info("Waiting to equilibrate: {} secs".format(eq_time))
-            utils.startForAndWait(key, eq_time)
+            # utils.startForAndWait(key, eq_time)
+            response = utils.startForAndWait(key, eq_time)
+            if "Singular".lower() in (json.loads(response)['message']).lower():
+                raise ValueError("Singular Matrix");
             utils.stop(key)
             # print("Done equilibrating, reading output values")
             logger.info("Done equilibrating, reading output values")
@@ -207,7 +216,10 @@ class NetworkFitter():
 
             # print("Waiting to equilibrate: {} secs".format(eq_time))
             logger.info("Waiting to equilibrate: {} secs".format(eq_time))
-            utils.startForAndWait(key, eq_time)
+            # utils.startForAndWait(key, eq_time)
+            response = utils.startForAndWait(key, eq_time)
+            if "Singular".lower() in (json.loads(response)['message']).lower():
+                raise ValueError("Singular Matrix");
             utils.stop(key)
             # print("Done equilibrating, reading output values")
             logger.info("Done equilibrating, reading output values")
@@ -496,6 +508,7 @@ def singularity_test():
                                           controlids=[], eq_time=0.0001, utils=utils)
     except Exception as e:
         print(e)
+        nf_lancuda.complete_steps(key, utils)
 
     nf_lancuda.complete_steps(key, utils)
     res = {0: res}
