@@ -22,6 +22,8 @@ from collections import OrderedDict
 import matplotlib.cm as cm
 from matplotlib.colors import Normalize
 import matplotlib.cm as cmx
+import scipy
+import copy
 
 import requests
 import json
@@ -575,6 +577,51 @@ class Percolator:
             # remove isolates
             G.remove_nodes_from(list(nx.isolates(G)))
         return G
+
+    def precondition_trim_lu(self, g, terminals, cutoff=1e-2):
+
+        terminals = list(np.ravel(terminals))
+        lap = nx.laplacian_matrix(g)
+
+        lap = lap + scipy.sparse.csr_matrix(np.eye(lap.shape[0]) * 1e-8)
+        lap = scipy.sparse.csc_matrix(lap)
+
+        nodelist = list(g.nodes())
+
+        i = np.zeros(lap.shape[0])
+        maxv = np.sqrt(lap.shape[0])
+        cur_dist = self.get_current_distrib(len(terminals), maxv)
+
+        for term, current in zip(terminals, cur_dist):
+            i[np.argwhere(np.array(nodelist) == term)[0][0]] = current
+
+        splu = scipy.sparse.linalg.splu(lap)
+        x = splu.solve(i)
+
+        vattr = {}
+
+        for n, val in enumerate(x):
+            vattr[nodelist[n]] = val
+
+        nx.set_node_attributes(g, vattr, 'volt')
+        volt_attr = nx.get_node_attributes(g, 'volt')
+        g2 = copy.deepcopy(g)
+
+        nrem = 0
+        removal_list = []
+        for e in g.edges():
+            try:
+                vdiff = abs(volt_attr[e[0]] - volt_attr[e[1]])
+                #         print(vdiff)
+                if vdiff < cutoff:
+                    nrem += 1
+                    g2.remove_edge(*e)
+            except:
+                print("Trim lu: can't find nodepairs:", e)
+                pass
+        g2.remove_nodes_from(list(nx.isolates(g2)))
+        #         print("edges removed",nrem)
+        return g2
 
     def plot_nxgraph(self,G, pos=None, edge_colors=None):
         plt.figure(figsize=(7, 7))
