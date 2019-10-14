@@ -337,6 +337,8 @@ class NetworkFitter():
             G = nx.barabasi_albert_graph(n=n, p=p)
         elif net_type == 'sq':
             G = ngut.generate_lattice(n=n, dim=2, rmp=rmp, periodic=False)
+        elif net_type == 'co':
+            G = nx.complete_graph(n=n)
 
         # print("Total edges generated", len(G.edges()))
         logger.info("Total edges generated" + str(len(G.edges())))
