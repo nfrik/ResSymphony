@@ -338,7 +338,7 @@ class NetworkFitter():
         elif net_type == 'sq':
             G = ngut.generate_lattice(n=n, dim=2, rmp=rmp, periodic=False)
         elif net_type == 'co':
-            G = nx.complete_graph(n=n)
+            G = nx.complete_graph(n)
 
         # print("Total edges generated", len(G.edges()))
         logger.info("Total edges generated" + str(len(G.edges())))
@@ -517,9 +517,16 @@ def singularity_test():
 
     print(res)
 
+def graph_generator_test():
+    nf_lancuda = NetworkFitter(serverUrl="http://10.152.17.144:8090/symphony/")
+    # c,g=nf_lancuda.generate_random_net_circuit(n=4,net_type='co')
+    c,g = nf_lancuda.generate_random_net_circuit(n=5, nin=2, nout=2, net_type='co')
+    print(c)
+
 def main():
-    singularity_test()
+    # singularity_test()
     # xor_test()
+    graph_generator_test()
 
 def other_main():
     nf = NetworkFitter()
