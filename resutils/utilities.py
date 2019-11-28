@@ -222,12 +222,55 @@ class Utilities:
         return json.loads(json.dumps(response.text))
 
     # Retrieve measurements from specified simulation as response file
+
     def measurements(self,key):
-        return None
+        # post
+        url = Utilities.serverUrl + "simulations/" + key + "/measurements_json"
+
+        response = requests.request("GET", url)
+
+        return json.loads(json.dumps(response.text))
 
     # Changes peek interval of measurements
-    def settings(self,key,peekInteval):
-        return None
+    def settings(self,key, peekInterval, pokeInterval):
+
+        url = Utilities.serverUrl + "simulations/" + key + "/settings"
+
+        headers = {
+            'content-type': "application/json",
+            'accept': "application/json"
+        }
+
+        response = requests.request("PATCH", url, headers=headers,
+                                    params={'peekInterval': peekInterval, 'pokeInterval': pokeInterval})
+
+        return json.loads(json.dumps(response.text))
+
+    def setArbWaveData(self, key, jsonString):
+        # files = {'file': ('circuit.json', jsonString)}
+        url = Utilities.serverUrl + "simulations/" + key + "/setArbwaveData"
+
+        headers = {
+            'content-type': "application/json",
+            'accept': "application/json"
+        }
+
+        response = requests.request("POST", url=url, headers=headers, data=jsonString)
+
+        return json.loads(json.dumps(response.text))
+
+    def setMeasurableElements(self, key, jsonString):
+        # files = {'file': ('circuit.json', jsonString)}
+        url = Utilities.serverUrl + "simulations/" + key + "/setMeasurableElements"
+
+        headers = {
+            'content-type': "application/json",
+            'accept': "application/json"
+        }
+
+        response = requests.request("POST", url=url, headers=headers, data=jsonString)
+
+        return json.loads(json.dumps(response.text))
 
     # Returns simulation time when last measurement was performed
     def peekTime(self,key):

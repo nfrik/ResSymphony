@@ -76,6 +76,11 @@ def transform_network_to_circuit_window(graph, inels=[], outels=[], contels=[], 
     #     totwidth = 1.0E-8
     #     dopwidth = 0.5*totwidth
 
+    # if ('air' in nx.get_edge_attributes(graph, 'edgeclass').values()) or (junct_res_per_nm > 0.0):
+    #     add_junct_res_to_wire = True
+    # else:
+    #     add_junct_res_to_wire = False
+
     # add_junct_res_to_wire = 'air' not in nx.get_edge_attributes(graph,'edgeclass').values()
     add_junct_res_to_wire = True if junct_res_per_nm > 0.0 else False
 
@@ -119,9 +124,9 @@ def transform_network_to_circuit_window(graph, inels=[], outels=[], contels=[], 
             lst = [window['dump'], e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth_rnd if rndmzd else dopwidth),
                    str(totwidth_rnd if rndmzd else totwidth), str(mobility)]+window['tail']
         elif el_type == 'r' or (el_type == 'm' and lengthnm <= mem_cutoff_len_nm):
-            if 'air' in el_class:
+            if ('air' in el_class) and add_junct_res_to_wire:
                 lst = ['r', e[0], e[1], 0, elemid, str(lengthnm * junct_res_per_nm)]
-            else:
+            elif ('air' not in el_class):
                 mrresistances.append(lengthnm * nw_res_per_nm)
                 lst = ['r', e[0], e[1], 0, elemid, str(lengthnm * nw_res_per_nm + (junct_res_per_nm if add_junct_res_to_wire else 0))]
         elif el_type == 'd':
