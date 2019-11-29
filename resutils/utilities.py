@@ -3,6 +3,8 @@ from __future__ import print_function
 import requests
 import json
 import time
+import gzip
+import base64
 
 class Utilities:
 
@@ -230,6 +232,20 @@ class Utilities:
         response = requests.request("GET", url)
 
         return json.loads(json.dumps(response.text))
+
+    def measurements_gzip(self,key):
+        # post
+        url = Utilities.serverUrl + "simulations/" + key + "/measurements_gzip"
+
+        response = requests.request("GET", url)
+
+        json_response = json.loads(json.loads(json.dumps(response.text)))
+
+        b64_response = base64.b64decode(json_response['message'])
+
+        str_response = gzip.decompress(b64_response).decode("utf-8")
+
+        return json.loads(str_response)
 
     # Changes peek interval of measurements
     def settings(self,key, peekInterval, pokeInterval):
