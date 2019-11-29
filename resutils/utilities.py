@@ -245,7 +245,7 @@ class Utilities:
 
         str_response = gzip.decompress(b64_response).decode("utf-8")
 
-        return json.loads(str_response)
+        return json.dumps({'key': key, 'measurements': json.loads(str_response)})
 
     # Changes peek interval of measurements
     def settings(self,key, peekInterval, pokeInterval):
