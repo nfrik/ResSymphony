@@ -578,6 +578,13 @@ class Percolator:
             G.remove_nodes_from(list(nx.isolates(G)))
         return G
 
+    def get_current_distrib(self,n, cmax=10):
+        lst = []
+        lst.append(float(-cmax))
+        for k in range(n - 1):
+            lst.append(cmax / (n - 1))
+        return lst
+
     def precondition_trim_lu(self, g, terminals, cutoff=1e-2):
 
         terminals = list(np.ravel(terminals))
