@@ -24,7 +24,7 @@ from matplotlib.colors import Normalize
 import matplotlib.cm as cmx
 import scipy
 import copy
-
+import plotly.graph_objects as go
 import requests
 import json
 import time
@@ -992,6 +992,188 @@ class Percolator:
         plt.show()
         return ax
 
+    def plotly_pos3d(self,graph=None, fig=None, title='', is3d=True, plot_wires=True, memcolor='red', rescolor='goldenrod',
+                     wirecolor='green', diodecolor='lightsteelblue', othercolor='teal'):
+        pos3d = nx.get_node_attributes(graph, 'pos3d')
+        mxl = []
+        myl = []
+        mzl = []
+        mlb = []
+        mcl = []
+
+        rxl = []
+        ryl = []
+        rzl = []
+        rlb = []
+        rcl = []
+
+        wxl = []
+        wyl = []
+        wzl = []
+        wlb = []
+        wcl = []
+
+        dxl = []
+        dyl = []
+        dzl = []
+        dlb = []
+        dcl = []
+
+        kxl = []
+        kyl = []
+        kzl = []
+        klb = []
+        kcl = []
+        if fig == None:
+            fig = go.Figure()
+
+        for e in graph.edges():
+            x1 = pos3d[e[0]][0]
+            y1 = pos3d[e[0]][1]
+            z1 = pos3d[e[0]][2] if is3d else 0.
+            x2 = pos3d[e[1]][0]
+            y2 = pos3d[e[1]][1]
+            z2 = pos3d[e[1]][2] if is3d else 0.
+            x = [x1, x2, None]
+            y = [y1, y2, None]
+            z = [z1, z2, None]
+            #         xl=xl+x
+            #         yl=yl+y
+            #         zl=zl+z
+            edgetype = {}
+            try:
+                edgetype = graph[e[0]][e[1]]['edgetype']
+                if 'm' in edgetype:
+                    mxl = mxl + x
+                    myl = myl + y
+                    mzl = mzl + z
+                    mcl = mcl + [1, 1, 0]
+                    mlb = mlb + ['m', 'm', 0]
+                elif 'r' in edgetype:
+                    rxl = rxl + x
+                    ryl = ryl + y
+                    rzl = rzl + z
+                    rcl = rcl + [2, 2, 0]
+                    rlb = rlb + ['r', 'r', 0]
+                elif 'w' in edgetype:
+                    if plot_wires:
+                        wxl = wxl + x
+                        wyl = wyl + y
+                        wzl = wzl + z
+                        wcl = wcl + [3, 3, 0]
+                        wlb = wlb + ['w', 'w', 0]
+                elif 'd' in edgetype:
+                    dxl = dxl + x
+                    dyl = dyl + y
+                    dzl = dzl + z
+                    dcl = dcl + [4, 4, 0]
+                    dlb = dlb + ['d', 'd', 0]
+            except:
+                kxl = kxl + x
+                kyl = kyl + y
+                kzl = kzl + z
+                cl = cl + [5, 5, 0]
+                lb = lb + ['k', 'k', 0]
+                pass
+
+        fig.add_trace(go.Scatter3d(
+            x=mxl, y=myl, z=mzl,
+            name='Memristors',
+            marker=dict(
+                size=0.1,
+            ),
+            line=dict(
+                color=memcolor,
+                #         color=[0 if v is None else -v for v in mcl],
+                #         colorscale='Viridis',
+                width=2
+            )
+        ))
+
+        fig.add_trace(go.Scatter3d(
+            x=rxl, y=ryl, z=rzl,
+            name='Resistors',
+            marker=dict(
+                size=0.1,
+            ),
+            line=dict(
+                color=rescolor,
+                #         color=[0 if v is None else -v for v in rcl],
+                #         colorscale='Viridis',
+                width=2
+            )
+        ))
+
+        fig.add_trace(go.Scatter3d(
+            x=wxl, y=wyl, z=wzl,
+            name='Wires',
+            marker=dict(
+                size=0.1,
+            ),
+            line=dict(
+                color=wirecolor,
+                #         color=[0 if v is None else -v for v in wcl],
+                #         colorscale='Viridis',
+                width=2
+            )
+        ))
+
+        fig.add_trace(go.Scatter3d(
+            x=dxl, y=dyl, z=dzl,
+            name='Diodes',
+            marker=dict(
+                size=0.1,
+            ),
+            line=dict(
+                color=diodecolor,
+                #         color=[0 if v is None else -v for v in dcl],
+                #         colorscale='Viridis',
+                width=2
+            )
+        ))
+
+        fig.add_trace(go.Scatter3d(
+            x=kxl, y=kyl, z=kzl,
+            name='Other',
+            marker=dict(
+                size=0.1,
+            ),
+            line=dict(
+                color=othercolor,
+                #         color=[0 if v is None else -v for v in kcl],
+                #         colorscale='Viridis',
+                width=2
+            )
+        ))
+
+        fig.update_layout(
+            width=800,
+            height=700,
+            autosize=False,
+            scene=dict(
+                camera=dict(
+                    up=dict(
+                        x=0,
+                        y=0,
+                        z=1
+                    ),
+                    eye=dict(
+                        x=0,
+                        y=1.0707,
+                        z=1,
+                    )
+                ),
+                aspectratio=dict(x=1, y=1, z=0.7),
+                aspectmode='manual',
+                bgcolor='rgba(0,0,0,0)'
+            ),
+        )
+
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=False)
+
+        return fig
+
     def plot_electrodes(self,ax=None, els=None, xmax=1, ymax=1, zmax=1, xdelta=1):
         x1, x2 = xmax - xdelta, xmax + xdelta
         colors = ['k', 'g', 'b', 'r', 'c', 'm', 'y', 'k'] * 10
@@ -1071,6 +1253,61 @@ class Percolator:
                 x = np.array(e)[:, 2].tolist()
                 ax.plot(x, y, z, colors[n])
         return ax
+
+    def plotly_electrode_boxes(self,fig=None, el_array=None, cols=[10]):
+        #     x1, x2 = xmax - xdelta, xmax + xdelta
+        colors = cols * 10
+        if fig == None:
+            fig = go.Figure()
+
+        for k, n in zip(list(el_array.keys()), range(len(list(el_array.keys())))):
+            x1, y1, z1, x2, y2, z2 = el_array[k]['x0'], el_array[k]['y0'], el_array[k]['z0'], el_array[k]['x1'], \
+                                     el_array[k]['y1'], el_array[k]['z1']
+            edges = []
+            edges.append([[y1, z1, x1], [y1, z2, x1]])
+            edges.append([[y1, z2, x1], [y2, z2, x1]])
+            edges.append([[y2, z2, x1], [y2, z1, x1]])
+            edges.append([[y2, z1, x1], [y1, z1, x1]])
+
+            edges.append([[y1, z1, x2], [y1, z2, x2]])
+            edges.append([[y1, z2, x2], [y2, z2, x2]])
+            edges.append([[y2, z2, x2], [y2, z1, x2]])
+            edges.append([[y2, z1, x2], [y1, z1, x2]])
+
+            edges.append([[y1, z1, x1], [y1, z1, x2]])
+            edges.append([[y1, z2, x1], [y1, z2, x2]])
+            edges.append([[y2, z2, x1], [y2, z2, x2]])
+            edges.append([[y2, z1, x1], [y2, z1, x2]])
+
+            xl = []
+            yl = []
+            zl = []
+            for e in edges:
+                y = np.array(e)[:, 0].tolist()
+                z = np.array(e)[:, 1].tolist()
+                x = np.array(e)[:, 2].tolist()
+                xl = xl + [x[0], x[1], None]
+                yl = yl + [y[0], y[1], None]
+                zl = zl + [z[0], z[1], None]
+            #             ax.plot(x, y, z, colors[n])
+            fig.add_trace(
+                go.Scatter3d(
+                    x=xl, y=yl, z=zl,
+                    name="Electrode",
+                    marker=dict(
+                        size=0.1,
+                    ),
+                    line=dict(
+                        color=colors[n],
+                        colorscale='Viridis',
+                        width=2
+                    )
+                ))
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=False)
+
+        #     fig.show()
+        return fig
 
     def get_electrodes_rects(self,els=[1, 1], gap=0.2):
         list1 = list(range(els[0]))
