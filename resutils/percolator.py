@@ -22,7 +22,9 @@ from collections import OrderedDict
 import matplotlib.cm as cm
 from matplotlib.colors import Normalize
 import matplotlib.cm as cmx
-
+import scipy
+import copy
+import plotly.graph_objects as go
 import requests
 import json
 import time
@@ -558,6 +560,76 @@ class Percolator:
             G.remove_nodes_from(list(nx.isolates(G)))
         return G
 
+    def prune_dead_edges_el_pan(self, graph, el_pan, runs=25):
+        G = graph.copy()
+        nbs = []
+        elect_nodes = list(np.ravel(el_pan))
+        for run in range(runs):
+            for n in sorted([z for z in sorted(G.degree, key=lambda x: x[1], reverse=False) if z[1] == 1]):
+                nbs.append([n[0], list(G.neighbors(n[0]))[0]])
+
+            for nb in nbs:
+                if nb[0] not in elect_nodes and nb[1] not in elect_nodes:
+                    try:
+                        G.remove_edge(nb[0], nb[1])
+                    except:
+                        pass
+            # remove isolates
+            G.remove_nodes_from(list(nx.isolates(G)))
+        return G
+
+    def get_current_distrib(self,n, cmax=10):
+        lst = []
+        lst.append(float(-cmax))
+        for k in range(n - 1):
+            lst.append(cmax / (n - 1))
+        return lst
+
+    def precondition_trim_lu(self, g, terminals, cutoff=1e-2):
+
+        terminals = list(np.ravel(terminals))
+        lap = nx.laplacian_matrix(g)
+
+        lap = lap + scipy.sparse.csr_matrix(np.eye(lap.shape[0]) * 1e-8)
+        lap = scipy.sparse.csc_matrix(lap)
+
+        nodelist = list(g.nodes())
+
+        i = np.zeros(lap.shape[0])
+        maxv = np.sqrt(lap.shape[0])
+        cur_dist = self.get_current_distrib(len(terminals), maxv)
+
+        for term, current in zip(terminals, cur_dist):
+            i[np.argwhere(np.array(nodelist) == term)[0][0]] = current
+
+        splu = scipy.sparse.linalg.splu(lap)
+        x = splu.solve(i)
+
+        vattr = {}
+
+        for n, val in enumerate(x):
+            vattr[nodelist[n]] = val
+
+        nx.set_node_attributes(g, vattr, 'volt')
+        volt_attr = nx.get_node_attributes(g, 'volt')
+        g2 = copy.deepcopy(g)
+
+        nrem = 0
+        removal_list = []
+        for e in g.edges():
+            try:
+                vdiff = abs(volt_attr[e[0]] - volt_attr[e[1]])
+                #         print(vdiff)
+                if vdiff < cutoff:
+                    nrem += 1
+                    g2.remove_edge(*e)
+            except:
+                print("Trim lu: can't find nodepairs:", e)
+                pass
+        g2.remove_nodes_from(list(nx.isolates(g2)))
+        #         print("edges removed",nrem)
+        return g2
+
     def plot_nxgraph(self,G, pos=None, edge_colors=None):
         plt.figure(figsize=(7, 7))
         if pos == None and edge_colors == None:
@@ -760,11 +832,11 @@ class Percolator:
         return ax
 
     def plot_pos3d_lightning(self,graph=None, ax=None, title='', is3d=True, plot_wires=True, save_as=None, elev=20, azim=90,
-                   max_current=1,cmap='jet',dist=10):
+                             max_current=1, cmap='jet', dist=5, max_line_width=5, min_line_width=0.4, electrodes=[]):
         pos3d = nx.get_node_attributes(graph, 'pos3d')
         #     max_current=np.max(np.abs(list(nx.get_edge_attributes(graph,'current').values())))
-        max_line_width = 4
-        min_line_width = 0.1
+        #     max_line_width = 5
+        #     min_line_width = 0.4
         jet = cm = plt.get_cmap(cmap)
         cNorm = Normalize(vmin=-max_current, vmax=max_current)
         scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
@@ -790,7 +862,7 @@ class Percolator:
             try:
                 edgetype = graph[e[0]][e[1]]['edgetype']
                 edgecurrent = graph[e[0]][e[1]]['current']
-                colorVal = scalarMap.to_rgba(abs(edgecurrent))
+                #             colorVal = scalarMap.to_rgba(abs(edgecurrent))
 
                 do_plot = True
 
@@ -803,7 +875,16 @@ class Percolator:
                     lw = abs(edgecurrent / max_current) * max_line_width
                     lw = min_line_width if lw < min_line_width else lw
 
-                    p = ax.plot(x, y, z, color=colorVal, linewidth=lw)
+                    if 'm' in edgetype:
+                        p = ax.plot(x, y, z, color='r', linewidth=lw)
+                    #                     p = ax.scatter(x1, y1, z1, c='r',s=lw)
+                    else:
+                        p = ax.plot(x, y, z, color='g', linewidth=lw)
+
+            #                 if 'm' in edgetype:
+            #                     p = ax.plot(x, y, z, color=scalarMap.to_rgba(abs(edgecurrent)), linewidth=lw)
+            #                 else:
+            #                     p = ax.plot(x, y, z, color=scalarMap.to_rgba(abs(0)), linewidth=lw)
 
             #             if 'm' in edgetype:
             #                 ax.plot(x, y, z, c='b', label='memristor')
@@ -841,6 +922,9 @@ class Percolator:
         ax.dist = dist
         #     sm = plt.cm.ScalarMappable(cmap=cm, norm=plt.Normalize(vmin=-0.001, vmax=0.001))
         #     plt.colorbar(sm)
+        for el, col in zip(electrodes, ['y', 'b', 'g', 'r', 'c', 'm'] * 50):
+            self.plot_electrode_boxes(ax=ax, el_array=el, cols=[col])
+
         if save_as == None:
             plt.show()
         else:
@@ -908,6 +992,188 @@ class Percolator:
         plt.show()
         return ax
 
+    def plotly_pos3d(self,graph=None, fig=None, title='', is3d=True, plot_wires=True, memcolor='red', rescolor='goldenrod',
+                     wirecolor='green', diodecolor='lightsteelblue', othercolor='teal'):
+        pos3d = nx.get_node_attributes(graph, 'pos3d')
+        mxl = []
+        myl = []
+        mzl = []
+        mlb = []
+        mcl = []
+
+        rxl = []
+        ryl = []
+        rzl = []
+        rlb = []
+        rcl = []
+
+        wxl = []
+        wyl = []
+        wzl = []
+        wlb = []
+        wcl = []
+
+        dxl = []
+        dyl = []
+        dzl = []
+        dlb = []
+        dcl = []
+
+        kxl = []
+        kyl = []
+        kzl = []
+        klb = []
+        kcl = []
+        if fig == None:
+            fig = go.Figure()
+
+        for e in graph.edges():
+            x1 = pos3d[e[0]][0]
+            y1 = pos3d[e[0]][1]
+            z1 = pos3d[e[0]][2] if is3d else 0.
+            x2 = pos3d[e[1]][0]
+            y2 = pos3d[e[1]][1]
+            z2 = pos3d[e[1]][2] if is3d else 0.
+            x = [x1, x2, None]
+            y = [y1, y2, None]
+            z = [z1, z2, None]
+            #         xl=xl+x
+            #         yl=yl+y
+            #         zl=zl+z
+            edgetype = {}
+            try:
+                edgetype = graph[e[0]][e[1]]['edgetype']
+                if 'm' in edgetype:
+                    mxl = mxl + x
+                    myl = myl + y
+                    mzl = mzl + z
+                    mcl = mcl + [1, 1, 0]
+                    mlb = mlb + ['m', 'm', 0]
+                elif 'r' in edgetype:
+                    rxl = rxl + x
+                    ryl = ryl + y
+                    rzl = rzl + z
+                    rcl = rcl + [2, 2, 0]
+                    rlb = rlb + ['r', 'r', 0]
+                elif 'w' in edgetype:
+                    if plot_wires:
+                        wxl = wxl + x
+                        wyl = wyl + y
+                        wzl = wzl + z
+                        wcl = wcl + [3, 3, 0]
+                        wlb = wlb + ['w', 'w', 0]
+                elif 'd' in edgetype:
+                    dxl = dxl + x
+                    dyl = dyl + y
+                    dzl = dzl + z
+                    dcl = dcl + [4, 4, 0]
+                    dlb = dlb + ['d', 'd', 0]
+            except:
+                kxl = kxl + x
+                kyl = kyl + y
+                kzl = kzl + z
+                cl = cl + [5, 5, 0]
+                lb = lb + ['k', 'k', 0]
+                pass
+
+        fig.add_trace(go.Scatter3d(
+            x=mxl, y=myl, z=mzl,
+            name='Memristors',
+            marker=dict(
+                size=0.1,
+            ),
+            line=dict(
+                color=memcolor,
+                #         color=[0 if v is None else -v for v in mcl],
+                #         colorscale='Viridis',
+                width=2
+            )
+        ))
+
+        fig.add_trace(go.Scatter3d(
+            x=rxl, y=ryl, z=rzl,
+            name='Resistors',
+            marker=dict(
+                size=0.1,
+            ),
+            line=dict(
+                color=rescolor,
+                #         color=[0 if v is None else -v for v in rcl],
+                #         colorscale='Viridis',
+                width=2
+            )
+        ))
+
+        fig.add_trace(go.Scatter3d(
+            x=wxl, y=wyl, z=wzl,
+            name='Wires',
+            marker=dict(
+                size=0.1,
+            ),
+            line=dict(
+                color=wirecolor,
+                #         color=[0 if v is None else -v for v in wcl],
+                #         colorscale='Viridis',
+                width=2
+            )
+        ))
+
+        fig.add_trace(go.Scatter3d(
+            x=dxl, y=dyl, z=dzl,
+            name='Diodes',
+            marker=dict(
+                size=0.1,
+            ),
+            line=dict(
+                color=diodecolor,
+                #         color=[0 if v is None else -v for v in dcl],
+                #         colorscale='Viridis',
+                width=2
+            )
+        ))
+
+        fig.add_trace(go.Scatter3d(
+            x=kxl, y=kyl, z=kzl,
+            name='Other',
+            marker=dict(
+                size=0.1,
+            ),
+            line=dict(
+                color=othercolor,
+                #         color=[0 if v is None else -v for v in kcl],
+                #         colorscale='Viridis',
+                width=2
+            )
+        ))
+
+        fig.update_layout(
+            width=800,
+            height=700,
+            autosize=False,
+            scene=dict(
+                camera=dict(
+                    up=dict(
+                        x=0,
+                        y=0,
+                        z=1
+                    ),
+                    eye=dict(
+                        x=0,
+                        y=1.0707,
+                        z=1,
+                    )
+                ),
+                aspectratio=dict(x=1, y=1, z=0.7),
+                aspectmode='manual',
+                bgcolor='rgba(0,0,0,0)'
+            ),
+        )
+
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=False)
+
+        return fig
+
     def plot_electrodes(self,ax=None, els=None, xmax=1, ymax=1, zmax=1, xdelta=1):
         x1, x2 = xmax - xdelta, xmax + xdelta
         colors = ['k', 'g', 'b', 'r', 'c', 'm', 'y', 'k'] * 10
@@ -953,7 +1219,7 @@ class Percolator:
                 ax.plot(x, y, z, colors[n])
         return ax
 
-    def plot_electrode_boxes(self,ax=None, el_array=None,cols=['k', 'g', 'b', 'r', 'c', 'm', 'y', 'k']):
+    def plot_electrode_boxes(self,ax=None, el_array=None, cols=['k', 'g', 'b', 'r', 'c', 'm', 'y', 'k']):
         #     x1, x2 = xmax - xdelta, xmax + xdelta
         colors = cols * 10
         if ax == None:
@@ -987,6 +1253,61 @@ class Percolator:
                 x = np.array(e)[:, 2].tolist()
                 ax.plot(x, y, z, colors[n])
         return ax
+
+    def plotly_electrode_boxes(self,fig=None, el_array=None, cols=[10]):
+        #     x1, x2 = xmax - xdelta, xmax + xdelta
+        colors = cols * 10
+        if fig == None:
+            fig = go.Figure()
+
+        for k, n in zip(list(el_array.keys()), range(len(list(el_array.keys())))):
+            x1, y1, z1, x2, y2, z2 = el_array[k]['x0'], el_array[k]['y0'], el_array[k]['z0'], el_array[k]['x1'], \
+                                     el_array[k]['y1'], el_array[k]['z1']
+            edges = []
+            edges.append([[y1, z1, x1], [y1, z2, x1]])
+            edges.append([[y1, z2, x1], [y2, z2, x1]])
+            edges.append([[y2, z2, x1], [y2, z1, x1]])
+            edges.append([[y2, z1, x1], [y1, z1, x1]])
+
+            edges.append([[y1, z1, x2], [y1, z2, x2]])
+            edges.append([[y1, z2, x2], [y2, z2, x2]])
+            edges.append([[y2, z2, x2], [y2, z1, x2]])
+            edges.append([[y2, z1, x2], [y1, z1, x2]])
+
+            edges.append([[y1, z1, x1], [y1, z1, x2]])
+            edges.append([[y1, z2, x1], [y1, z2, x2]])
+            edges.append([[y2, z2, x1], [y2, z2, x2]])
+            edges.append([[y2, z1, x1], [y2, z1, x2]])
+
+            xl = []
+            yl = []
+            zl = []
+            for e in edges:
+                y = np.array(e)[:, 0].tolist()
+                z = np.array(e)[:, 1].tolist()
+                x = np.array(e)[:, 2].tolist()
+                xl = xl + [x[0], x[1], None]
+                yl = yl + [y[0], y[1], None]
+                zl = zl + [z[0], z[1], None]
+            #             ax.plot(x, y, z, colors[n])
+            fig.add_trace(
+                go.Scatter3d(
+                    x=xl, y=yl, z=zl,
+                    name="Electrode",
+                    marker=dict(
+                        size=0.1,
+                    ),
+                    line=dict(
+                        color=colors[n],
+                        colorscale='Viridis',
+                        width=2
+                    )
+                ))
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=False)
+
+        #     fig.show()
+        return fig
 
     def get_electrodes_rects(self,els=[1, 1], gap=0.2):
         list1 = list(range(els[0]))
@@ -1121,6 +1442,14 @@ def network_groomer(self,accepted_graphs,els1,els2,el1_nodes,el2_nodes,xmin,xmax
     # plot_electrodes(xmax=xmin, ymax=ymax, zmax=zmax, ax=ax, els=els1, xdelta=delta)
     # plot_electrodes(xmax=xmax, ymax=ymax, zmax=zmax, ax=ax, els=els2, xdelta=delta)
 
+def get_ids_for_elemtype(self,elements,elemtype='MemristorElm'):
+    elems=json.loads(elements)['elements']
+    ids=[]
+    for elem in elems:
+        if elemtype.lower() in elem['type'].lower():
+            ids.append(elem['elementId'])
+    return ids
+
 def main():
     # percolator = Percolator(serverUrl="http://spartan.mse.ncsu.edu:8096/percolator/")
     percolator = Percolator(serverUrl="http://spartan.mse.ncsu.edu:15850/percolator/")
@@ -1174,6 +1503,8 @@ def main():
     # # res[0] = nf.run_continuous_sim(X,circ['inputids'],circ['outputids'],circ['circuit'],0.0005,resutils)
     #
     # batch_plot_single_sim(res, title='mem 1.0 cutoff', num_elects=3)
+
+
 
 if __name__ == "__main__":
     main()
