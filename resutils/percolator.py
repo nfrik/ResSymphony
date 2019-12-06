@@ -1442,14 +1442,6 @@ def network_groomer(self,accepted_graphs,els1,els2,el1_nodes,el2_nodes,xmin,xmax
     # plot_electrodes(xmax=xmin, ymax=ymax, zmax=zmax, ax=ax, els=els1, xdelta=delta)
     # plot_electrodes(xmax=xmax, ymax=ymax, zmax=zmax, ax=ax, els=els2, xdelta=delta)
 
-def get_ids_for_elemtype(self,elements,elemtype='MemristorElm'):
-    elems=json.loads(elements)['elements']
-    ids=[]
-    for elem in elems:
-        if elemtype.lower() in elem['type'].lower():
-            ids.append(elem['elementId'])
-    return ids
-
 def main():
     # percolator = Percolator(serverUrl="http://spartan.mse.ncsu.edu:8096/percolator/")
     percolator = Percolator(serverUrl="http://spartan.mse.ncsu.edu:15850/percolator/")

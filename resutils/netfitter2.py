@@ -38,6 +38,14 @@ class NetworkFitter():
         else:
             self.serverUrl = serverUrl
 
+    def get_ids_for_elemtype(self, elements, elemtype='MemristorElm'):
+        elems = json.loads(elements)['elements']
+        ids = []
+        for elem in elems:
+            if elemtype.lower() in elem['type'].lower():
+                ids.append(elem['elementId'])
+        return ids
+
     def init_steps(self,jsonstr,utils):
         response = utils.createNewSimulation()
         logger.debug(response)
