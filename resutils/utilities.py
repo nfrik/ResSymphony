@@ -233,6 +233,14 @@ class Utilities:
 
         return json.loads(json.dumps(response.text))
 
+    def statistics(self,key):
+        # post
+        url = Utilities.serverUrl + "simulations/" + key + "/statistics"
+
+        response = requests.request("GET", url)
+
+        return json.loads(json.dumps(response.text))
+
     def measurements_gzip(self,key):
         # post
         url = Utilities.serverUrl + "simulations/" + key + "/measurements_gzip"
