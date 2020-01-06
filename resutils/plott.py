@@ -12,6 +12,7 @@ from sklearn import linear_model
 from sklearn.decomposition import PCA
 from sklearn.svm import SVC
 from sklearn.preprocessing import scale, normalize, minmax_scale, StandardScaler
+import pandas as pd
 
 def plot3d(inmat,inputcirc=None,title=""):
 
@@ -117,6 +118,40 @@ def pca_plotter(input,savepath=""):
     else:
         plt.show()
 
+
+def plot_meas(datav=None, datai=None, title=''):
+    plt.figure(figsize=(10, 5))
+    #     df = pd.read_csv(fle)
+    # plt.subplot(211)
+    plt.plot(datav, np.multiply(1000, datai))
+    plt.xlabel('Voltage (V)')
+    plt.ylabel('Current (mA)')
+    plt.title(title)
+    plt.axhline(0, linewidth=.3, color='k')
+    plt.axvline(0, linewidth=.3, color='k')
+    # fig, ax = plt.subplots(212)
+    # ax1, ax2 = two_scales(df['Time(s)']*1000,df['Drive(V)']*1000, df['Time(s)']*1000,df['Current(mA)']*50000000, 'r', 'b')
+
+    fig, ax1 = plt.subplots()
+    t = np.arange(0.01, 10.0, 0.01)
+    s1 = np.exp(t)
+    ax1.plot(datav, 'b-')
+    ax1.set_xlabel('time (s)')
+    # Make the y-axis label, ticks and tick labels match the line color.
+    ax1.set_ylabel('Voltage (V)', color='b')
+    ax1.tick_params('y', colors='b')
+
+    ax2 = ax1.twinx()
+    s2 = np.sin(2 * np.pi * t)
+    ax2.plot(np.multiply(1000, datai), 'r-')
+    ax2.set_ylabel('Current (mA)', color='r')
+    ax2.tick_params('y', colors='r')
+
+    fig.tight_layout()
+    # plt.show()
+
+    plt.show()
+
 def plot_json_graph(dictdata,imagepath=""):
 
     col_map, edgelist = json2edgelist(dictdata)
@@ -153,6 +188,206 @@ def json2edgelist(dictdata):
                'R': 'red'}  # input
     return col_map, edgelist
 
+
+#Plots I vs V
+def plot_meas(datav=None, datai=None, title='', tstep=0.0001):
+    plt.figure(figsize=(10, 5))
+    #     df = pd.read_csv(fle)
+    # plt.subplot(211)
+    plt.plot(datav, np.multiply(1000, datai))
+    plt.xlabel('Voltage (V)')
+    plt.ylabel('Current (mA)')
+    plt.title(title)
+    plt.axhline(0, linewidth=.3, color='k')
+    plt.axvline(0, linewidth=.3, color='k')
+    # fig, ax = plt.subplots(212)
+    # ax1, ax2 = two_scales(df['Time(s)']*1000,df['Drive(V)']*1000, df['Time(s)']*1000,df['Current(mA)']*50000000, 'r', 'b')
+
+    fig, ax1 = plt.subplots()
+    t = np.arange(0.01, 10.0, 0.01)
+    s1 = np.exp(t)
+    ax1.plot(np.arange(len(datav)) * tstep, datav, 'b-')
+    ax1.set_xlabel('time (s)')
+    # Make the y-axis label, ticks and tick labels match the line color.
+    ax1.set_ylabel('Voltage (V)', color='b')
+    ax1.tick_params('y', colors='b')
+
+    ax2 = ax1.twinx()
+    s2 = np.sin(2 * np.pi * t)
+    ax2.plot(np.arange(len(datav)) * tstep, np.multiply(1000, datai), 'r-')
+    ax2.set_ylabel('Current (mA)', color='r')
+    ax2.tick_params('y', colors='r')
+
+    fig.tight_layout()
+    # plt.show()
+
+    plt.show()
+
+def two_scales(ax1, time, data1, data2, c1, c2):
+    """
+
+    Parameters
+    ----------
+    ax : axis
+        Axis to put two scales on
+
+    time : array-like
+        x-axis values for both datasets
+
+    data1: array-like
+        Data for left hand scale
+
+    data2 : array-like
+        Data for right hand scale
+
+    c1 : color
+        Color for line 1
+
+    c2 : color
+        Color for line 2
+
+    Returns
+    -------
+    ax : axis
+        Original axis
+    ax2 : axis
+        New twin axis
+    """
+    ax2 = ax1.twinx()
+
+    ax1.plot(time, data1, color=c1)
+    ax1.set_xlabel('time (s)')
+    ax1.set_ylabel('exp')
+
+    ax2.plot(time, data2, color=c2)
+    ax2.set_ylabel('sin')
+    return ax1, ax2
+
+
+def plot_meas(fle='', title=''):
+    if title == '':
+        title = fle;
+    plt.figure(figsize=(10, 5))
+    df = pd.read_csv(fle)
+    # plt.subplot(211)
+    plt.plot(df['Drive(V)'], df['Current(mA)'] * 1000)
+    plt.xlabel('Voltage (V)')
+    plt.ylabel('Current (uA)')
+    plt.title(title)
+    plt.axhline(0, linewidth=.3, color='k')
+    plt.axvline(0, linewidth=.3, color='k')
+    # fig, ax = plt.subplots(212)
+    # ax1, ax2 = two_scales(df['Time(s)']*1000,df['Drive(V)']*1000, df['Time(s)']*1000,df['Current(mA)']*50000000, 'r', 'b')
+
+    fig, ax1 = plt.subplots()
+    t = np.arange(0.01, 10.0, 0.01)
+    s1 = np.exp(t)
+    ax1.plot(df['Time(s)'], df['Drive(V)'], 'b.')
+    ax1.set_xlabel('time (s)')
+    # Make the y-axis label, ticks and tick labels match the line color.
+    ax1.set_ylabel('Voltage (V)', color='b')
+    ax1.tick_params('y', colors='b')
+
+    ax2 = ax1.twinx()
+    s2 = np.sin(2 * np.pi * t)
+    ax2.plot(df['Time(s)'], df['Current(mA)'] * 1000, 'r.')
+    ax2.set_ylabel('Current (uA)', color='r')
+    ax2.tick_params('y', colors='r')
+
+    fig.tight_layout()
+    # plt.show()
+
+    plt.show()
+
+
+def plot_dual_meas(fle1='', fle2='', title=''):
+    if title == '':
+        title = fle1;
+    df1 = pd.read_csv(fle1)
+    tl = np.array(df1['Time(s)'])[-1]
+    df2 = pd.read_csv(fle2)
+    df2['Time(s)'] = df2['Time(s)'].add(tl)
+    df = df1.append(df2)
+    plt.figure(figsize=(8, 5))
+    plt.plot(df['Drive(V)'], df['Current(mA)'] * 1000)
+    plt.xlabel('Voltage (V)')
+    plt.ylabel('Current (uA)')
+    plt.title(title)
+    plt.axhline(0, linewidth=.3, color='k')
+    plt.axvline(0, linewidth=.3, color='k')
+    # fig, ax = plt.subplots(212)
+    # ax1, ax2 = two_scales(df['Time(s)']*1000,df['Drive(V)']*1000, df['Time(s)']*1000,df['Current(mA)']*50000000, 'r', 'b')
+    #     plt.show()
+    #     plt.figure()
+    fig, ax1 = plt.subplots()
+    fig.set_figheight(6)
+    fig.set_figwidth(10)
+    t = np.arange(0.01, 10.0, 0.01)
+    s1 = np.exp(t)
+    color = 'tab:blue'
+    ax1.plot(df['Time(s)'], df['Drive(V)'], color=color, linestyle=':', linewidth=2)
+    ax1.set_xlabel('time (s)')
+    # Make the y-axis label, ticks and tick labels match the line color.
+    ax1.set_ylabel('Voltage (V)', color=color)
+    ax1.tick_params('y', colors=color)
+
+    color = 'tab:red'
+    ax2 = ax1.twinx()
+    s2 = np.sin(2 * np.pi * t)
+    ax2.plot(df['Time(s)'], df['Current(mA)'] * 1000, color=color, linestyle='-', linewidth=2)
+    ax2.set_ylabel('Current (uA)', color=color)
+    ax2.tick_params('y', colors=color)
+
+    fig.tight_layout()
+
+    plt.show()
+
+
+def plot_batch_meas(fles=[], title=''):
+    if title == '':
+        title = fles[0];
+
+    df = pd.read_csv(fles[0])
+    for i in range(len(fles) - 1):
+        #         df1 = pd.read_csv(fles[i])
+        tl = np.array(df['Time(s)'])[-1]
+        df2 = pd.read_csv(fles[i + 1])
+        df2['Time(s)'] = df2['Time(s)'].add(tl)
+        df = df.append(df2)
+
+    plt.figure(figsize=(6, 3))
+    plt.plot(df['Drive(V)'], df['Current(mA)'] * 1000)
+    plt.xlabel('Voltage (V)')
+    plt.ylabel('Current (uA)')
+    plt.title(title)
+    plt.axhline(0, linewidth=.3, color='k')
+    plt.axvline(0, linewidth=.3, color='k')
+    # fig, ax = plt.subplots(212)
+    # ax1, ax2 = two_scales(df['Time(s)']*1000,df['Drive(V)']*1000, df['Time(s)']*1000,df['Current(mA)']*50000000, 'r', 'b')
+    #     plt.show()
+    #     plt.figure()
+    fig, ax1 = plt.subplots()
+    fig.set_figheight(4)
+    fig.set_figwidth(6)
+    t = np.arange(0.01, 10.0, 0.01)
+    s1 = np.exp(t)
+    color = 'tab:blue'
+    ax1.plot(df['Time(s)'], df['Drive(V)'], color=color, linestyle=':', linewidth=2)
+    ax1.set_xlabel('time (s)')
+    # Make the y-axis label, ticks and tick labels match the line color.
+    ax1.set_ylabel('Voltage (V)', color=color)
+    ax1.tick_params('y', colors=color)
+
+    color = 'tab:red'
+    ax2 = ax1.twinx()
+    s2 = np.sin(2 * np.pi * t)
+    ax2.plot(df['Time(s)'], df['Current(mA)'] * 1000, color=color, linestyle='-', linewidth=2)
+    ax2.set_ylabel('Current (uA)', color=color)
+    ax2.tick_params('y', colors=color)
+
+    fig.tight_layout()
+
+    plt.show()
 
 def main():
 

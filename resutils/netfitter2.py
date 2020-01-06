@@ -38,8 +38,57 @@ class NetworkFitter():
         else:
             self.serverUrl = serverUrl
 
+    def get_ids_for_elemtype(self, elements, elemtype='MemristorElm'):
+        elems = json.loads(elements)['elements']
+        ids = []
+        for elem in elems:
+            if elemtype.lower() in elem['type'].lower():
+                ids.append(elem['elementId'])
+        return ids
+
+    def init_steps(self,jsonstr,utils):
+        response = utils.createNewSimulation()
+        logger.debug(response)
+        key = json.loads(response)["key"]
+        response = utils.loadCircuitFromGraphString(key, jsonstr)
+        logger.debug(response)
+
+        return key
+
+    def make_step(self,key,X,inputids,controlids,outputids,eq_time,utils):
+
+        vinids=inputids+controlids
+        for inputid, idnum in zip(vinids, range(len(vinids))):
+            response = utils.setElementProperty(key, str(inputid), "maxVoltage",
+                                                str(X[idnum]))
+
+        # print("Waiting to equilibrate: {} secs".format(eq_time))
+        logger.info("Waiting to equilibrate: {} secs".format(eq_time))
+        response = utils.startForAndWait(key, eq_time)
+        if "Singular".lower() in (json.loads(response)['message']).lower():
+            raise ValueError("Singular Matrix");
+
+        utils.stop(key)
+
+        outvals = {}
+        # print("Done equilibrating, reading output values")
+        logger.info("Done equilibrating, reading output values")
+        for outid in outputids:
+            response = utils.getCurrent(key, str(outid))
+            curval = json.loads(response)['value']
+            # print("Output current vals: ", curval)
+            outvals[outid]=curval
+
+        return outvals
+
+
+    def complete_steps(self,key,utils):
+        utils.stop(key)
+        utils.kill(key)
+
     def run_single_sim(self, X, y, inputids, outputids, jsonstr, eq_time, utils, perturb=False):
         response = utils.createNewSimulation()
+
         # print(response)
         logger.debug(response)
         key = json.loads(response)["key"]
@@ -57,8 +106,12 @@ class NetworkFitter():
 
         # print("Waiting to equilibrate: {} secs".format(eq_time))
         logger.info("Waiting to equilibrate: {} secs".format(eq_time))
-        utils.startForAndWait(key, eq_time)
+        # utils.startForAndWait(key, eq_time)
+        response = utils.startForAndWait(key, eq_time)
+        if "Singular".lower() in (json.loads(response)['message']).lower():
+            raise ValueError("Singular Matrix");
         utils.stop(key)
+
         outvals = []
         # print("Done equilibrating, reading output values")
         logger.info("Done equilibrating, reading output values")
@@ -71,7 +124,49 @@ class NetworkFitter():
         outvals.append(y)
         return outvals
 
-    def run_single_sim_series(self, X, y, inputids, outputids, jsonstr, eq_time, utils, perturb=False, repeat=1):
+    def run_single_sim_control(self, X, y, control, inputids, outputids, controlids, jsonstr, eq_time, utils, perturb=False):
+        response = utils.createNewSimulation()
+
+        # print(response)
+        logger.debug(response)
+        key = json.loads(response)["key"]
+        response = utils.loadCircuitFromGraphString(key, jsonstr)
+        # print(response)
+        logger.debug(response)
+        # resutils.start(key)
+        inoutvals = {}
+        # print("Setting up inputs:", X, "for outputs:",y)
+        logger.debug("Setting up inputs: {} for outputs: {} and control: {}".format(X, y, control))
+
+        for inputid, idnum in zip(inputids, range(len(inputids))):
+            response = utils.setElementProperty(key, str(inputid), "maxVoltage",
+                                                str(X[idnum]))
+
+        for controlid, idnum in zip(controlids, range(len(controlids))):
+            response = utils.setElementProperty(key, str(controlid), "maxVoltage",
+                                                str(control[idnum]))
+
+        # print("Waiting to equilibrate: {} secs".format(eq_time))
+        logger.info("Waiting to equilibrate: {} secs".format(eq_time))
+        # utils.startForAndWait(key, eq_time)
+        response = utils.startForAndWait(key, eq_time)
+        if "Singular".lower() in (json.loads(response)['message']).lower():
+            raise ValueError("Singular Matrix");
+        utils.stop(key)
+
+        outvals = []
+        # print("Done equilibrating, reading output values")
+        logger.info("Done equilibrating, reading output values")
+        for outid in outputids:
+            response = utils.getCurrent(key, str(outid))
+            curval = json.loads(response)['value']
+            # print("Output current vals: ", curval)
+            outvals.append(curval)
+        utils.kill(key)
+        outvals.append(y)
+        return outvals
+
+    def run_single_sim_series(self, X, y, inputids, outputids, jsonstr, eq_time, utils, repeat=1):
         response = utils.createNewSimulation()
         # print(response)
         logger.debug(response)
@@ -91,7 +186,10 @@ class NetworkFitter():
 
             # print("Waiting to equilibrate: {} secs".format(eq_time))
             logger.info("Waiting to equilibrate: {} secs".format(eq_time))
-            utils.startForAndWait(key, eq_time)
+            # utils.startForAndWait(key, eq_time)
+            response = utils.startForAndWait(key, eq_time)
+            if "Singular".lower() in (json.loads(response)['message']).lower():
+                raise ValueError("Singular Matrix");
             utils.stop(key)
             # print("Done equilibrating, reading output values")
             logger.info("Done equilibrating, reading output values")
@@ -126,7 +224,10 @@ class NetworkFitter():
 
             # print("Waiting to equilibrate: {} secs".format(eq_time))
             logger.info("Waiting to equilibrate: {} secs".format(eq_time))
-            utils.startForAndWait(key, eq_time)
+            # utils.startForAndWait(key, eq_time)
+            response = utils.startForAndWait(key, eq_time)
+            if "Singular".lower() in (json.loads(response)['message']).lower():
+                raise ValueError("Singular Matrix");
             utils.stop(key)
             # print("Done equilibrating, reading output values")
             logger.info("Done equilibrating, reading output values")
@@ -169,6 +270,39 @@ class NetworkFitter():
 
         return results
 
+    def network_eval_control(self, X, y, control, circ="", n_jobs=0):
+        if circ != "":
+            self.circuit = circ
+        jsonstr = self.circuit['circuit']
+        inputids = self.circuit['inputids']
+        outputids = self.circuit['outputids']
+
+        controlids = []
+        if len(control) >0:
+            controlids = self.circuit['controlids']
+
+        utils = utilities.Utilities(serverUrl=self.serverUrl)
+
+        results = []
+
+        if n_jobs == 0:
+            n_jobs = len(y)
+
+        with mp.pool.ThreadPool(processes=n_jobs) as pool:
+            outvals = pool.starmap(self.run_single_sim_control,
+                                   zip(X, y, control,
+                                       repeat(inputids),
+                                       repeat(outputids),
+                                       repeat(controlids),
+                                       repeat(jsonstr),
+                                       repeat(self.eq_time),
+                                       repeat(utils)))
+
+        for outval in outvals:
+            results.append(outval)
+
+        return results
+
     def logreg_fit(self, X, y, rescale=False):
         X = np.concatenate((X, y.reshape((-1, 1))), axis=1)
         if rescale == True:
@@ -187,12 +321,12 @@ class NetworkFitter():
         return logreg.score(X, y)
 
     def logreg_fit_mat(self, inmat, rescale=False):
+        y = np.array(inmat)[:, -1]
         if rescale:
             std_scaler = StandardScaler()
             std_scaler.fit(inmat)
             inmat = std_scaler.transform(inmat)
         X = np.array(inmat)[:, :-1]
-        y = np.array(inmat)[:, -1]
         logreg = linear_model.LogisticRegression(C=300.5, verbose=True, tol=1e-8, fit_intercept=True)
         logreg.fit(X, y)
 
@@ -202,7 +336,7 @@ class NetworkFitter():
 
         return logreg.score(X, y)
 
-    def generate_random_net(self, n=20, p=2, k=4, net_type='ws', plot=False):
+    def generate_random_net(self, n=20, p=2, k=4, rmp=0.1, net_type='ws', plot=False):
         # G = nx.complete_graph(10)
         # G = nx.fast_gnp_random_graph(n=n,p=p)
         if net_type == 'ws':
@@ -210,7 +344,9 @@ class NetworkFitter():
         elif net_type == 'ba':
             G = nx.barabasi_albert_graph(n=n, p=p)
         elif net_type == 'sq':
-            G = ngut.generate_lattice(n=n, dim=2, rmp=0.1, periodic=False)
+            G = ngut.generate_lattice(n=n, dim=2, rmp=rmp, periodic=False)
+        elif net_type == 'co':
+            G = nx.complete_graph(n)
 
         # print("Total edges generated", len(G.edges()))
         logger.info("Total edges generated" + str(len(G.edges())))
@@ -220,42 +356,44 @@ class NetworkFitter():
             plt.show()
         return G
 
-    def generate_random_net_circuit(self, n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndmzd=False, net_type='ws'):
+    def generate_random_net_circuit(self, n=10, p=2, k=4, nin=2, nout=2,ncont=0, el_type='m', rndmzd=False, rmp=0.1, net_type='ws', \
+                                    Ron=500,Roff=10000,dopwidth=0,totwidth=1.0E-8,totwidth_rnd_delta=5.,mobility=1.0E-10,drainres=100,t_step="5e-6"):
 
         # memristor base configuration
-        Ron = 500.
-        Roff = 100000.
-        dopwidth = 0.
-        totwidth = 1.0E-8
-        mobility = 1.0E-10
+        Ron = Ron
+        Roff = Roff
+        dopwidth = dopwidth
+        totwidth = totwidth
+        mobility = mobility
 
-        drainres = 100
+        drainres = drainres
 
-        elemceil = 10000  # maximum id of element
+        elemceil = 100000  # maximum id of element
 
-        G = self.generate_random_net(n=n, p=p, k=k, net_type=net_type)
+        G = self.generate_random_net(n=n, p=p, k=k, rmp=rmp, net_type=net_type)
         edges = G.edges()
         doc = {}
-        doc[0] = ['$', 1, 5e-06, 10.634267539816555, 43, 2.0, 50]
-        for e, elemid in zip(edges, range(1, len(edges) + 1)):
+        doc[0] = ['$', 1, t_step, 10.634267539816555, 43, 2.0, 50]
+        for elemid, ed in enumerate(edges, 1):
             # lst=["m",e[0],e[1],0,i,"100.0","32000.0","0.0","1.0E-8","1.0E-10"]
             if el_type == 'm':
-                totwidth_rnd = totwidth + random.uniform(-totwidth / 5., totwidth / 5.)
+                totwidth_rnd = totwidth + np.max([0,random.uniform(-totwidth / totwidth_rnd_delta, totwidth / totwidth_rnd_delta)])
                 dopwidth_rnd = random.uniform(0., totwidth_rnd)
-                lst = ["m", e[0], e[1], 0, elemid, str(Ron), str(Roff), str(dopwidth if rndmzd else dopwidth_rnd),
-                       str(totwidth if rndmzd else totwidth_rnd), str(mobility)]
+                lst = ["m", ed[0], ed[1], 0, elemid, str(Ron), str(Roff), str(dopwidth_rnd if rndmzd else dopwidth),
+                       str(totwidth_rnd if rndmzd else totwidth), str(mobility)]
             elif el_type == 'd':
-                lst = ["d", e[0], e[1], 1, elemid, "0.805904"]
+                lst = ["d", ed[0], ed[1], 1, elemid, "0.805904"]
             doc[elemid] = lst
 
         nodes = list(G.nodes)
 
-        inoutnodes = random.sample(nodes, nin + nout)
+        inoutcontnodes = random.sample(nodes, nin + nout + ncont)
 
         inputids = []
         outputids = []
+        controlids = []
 
-        for k in inoutnodes[:nin]:
+        for k in inoutcontnodes[:nin]:
             elemid += 1
             elemceil -= 1
             # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]
@@ -263,7 +401,7 @@ class NetworkFitter():
             doc[elemid] = lst
             inputids.append(elemid)
 
-        for k in inoutnodes[nin:nin + nout]:
+        for k in inoutcontnodes[nin:nin + nout]:
             elemid += 1
             elemceil -= 1
             lst = ["r", k, elemceil, 0, elemid, str(drainres)]
@@ -276,12 +414,21 @@ class NetworkFitter():
             lst = ["g", elemsav, elemceil, 0, 0]
             doc[elemid] = lst
 
+        for k in inoutcontnodes[nin+nout:nin + nout + ncont]:
+            elemid += 1
+            elemceil -= 1
+            # lst = ["R", k, elemceil, 0, elemid, "2", "40.0", "0.0", "0.0", "0.0", "0.5"]
+            lst = ["R", k, elemceil, 0, elemid, "0", "40.0", "0.01", "0.0", "0.0", "0.5"]
+            doc[elemid] = lst
+            controlids.append(elemid)
+
         result = {}
-        result['circuit'] = json.dumps(doc, sort_keys=True, indent=4)
+        result['circuit'] = json.dumps(doc)
         result['inputids'] = inputids
         result['outputids'] = outputids
+        result['controlids'] = controlids
 
-        return result
+        return result, G
 
 
 def perturb_X(X, boost=3, var=1):
@@ -292,7 +439,7 @@ def perturb_X(X, boost=3, var=1):
     return Y
 
 
-def main():
+def xor_test():
     ttables = {}
     ttables['xor'] = [[-1, -1, 0], [-1, 1, 1], [1, -1, 1], [1, 1, 0]]
     ttables['or'] = [[-1, -1, 0], [-1, 1, 1], [1, -1, 1], [1, 1, 0]]
@@ -315,8 +462,9 @@ def main():
     # input['outputids'] = [203,205,207,209,211,213,215,217]
 
     nf = NetworkFitter()
+    utils = utilities.Utilities(serverUrl="http://10.152.17.144:8090/symphony/")#nf.serverUrl)
 
-    circ = nf.generate_random_net_circuit(n=50, nin=2, nout=3)
+    circ, g = nf.generate_random_net_circuit(n=50, nin=2, nout=3)
 
     nf.circuit = circ
 
@@ -326,18 +474,67 @@ def main():
     y = data[:, -1]
     # plott.plot_json_graph(circ['circuit'])
 
-    start = time.time()
-    nf.eq_time = 0.004
-    resx = nf.network_eval(X, y)
-    resutils.plott.plot3d(resx, circ['circuit'])
-    results = nf.logreg_fit(resx, y)
-    end = time.time() - start
+    key = nf.init_steps(circ['circuit'], utils)
 
-    print("Final result vector: ", np.sum(np.abs(results)))
-    print("Circuit size: ", len(json.loads(circ['circuit']).keys()))
-    print("Simulation time: ", end)
-    return results
+    out1 = nf.make_step(key, X=[1,2], inputids=circ['inputids'], outputids=circ['outputids'],controlids=[], eq_time=0.0001, utils=utils)
+    out2 = nf.make_step(key, X=[1, 2], inputids=circ['inputids'], outputids=circ['outputids'], controlids=[],
+                        eq_time=0.0001, utils=utils)
+    out3 = nf.make_step(key, X=[1, 2], inputids=circ['inputids'], outputids=circ['outputids'], controlids=[],
+                        eq_time=0.0001, utils=utils)
+    out4 = nf.make_step(key, X=[1, 2], inputids=circ['inputids'], outputids=circ['outputids'], controlids=[],
+                        eq_time=0.0001, utils=utils)
 
+    # out1 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
+    # out2 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
+    # out3 = nf.make_step(key, [1, 2], 0, circ['inputids'], circ['outputids'], 0.0001, utils)
+    nf.complete_steps(key, utils)
+
+    # start = time.time()
+    # nf.eq_time = 0.004
+    # resx = nf.network_eval(X, y)
+    # resutils.plott.plot3d(resx, circ['circuit'])
+    # results = nf.logreg_fit(resx, y)
+    # end = time.time() - start
+    #
+    # print("Final result vector: ", np.sum(np.abs(results)))
+    # print("Circuit size: ", len(json.loads(circ['circuit']).keys()))
+    # print("Simulation time: ", end)
+    # return results
+
+def singularity_test():
+    y = [1, 1]
+
+    circ=json.load(open("/home/nifrick/PycharmProjects/ressymphony/resources/singular.json",'r'))
+
+    nf_lancuda = NetworkFitter(serverUrl="http://10.152.17.144:8090/symphony/")
+
+    utils = utilities.Utilities(serverUrl=nf_lancuda.serverUrl)
+    key = nf_lancuda.init_steps(circ['circuit'], utils)
+    res = {}
+
+    try:
+        for yval, n in tqdm_notebook(zip(y, range(len(y)))):
+            res[n] = nf_lancuda.make_step(key, X=[yval * 10000], inputids=circ['inputids'], outputids=circ['outputids'],
+                                          controlids=[], eq_time=0.0001, utils=utils)
+    except Exception as e:
+        print(e)
+        nf_lancuda.complete_steps(key, utils)
+
+    nf_lancuda.complete_steps(key, utils)
+    res = {0: res}
+
+    print(res)
+
+def graph_generator_test():
+    nf_lancuda = NetworkFitter(serverUrl="http://10.152.17.144:8090/symphony/")
+    # c,g=nf_lancuda.generate_random_net_circuit(n=4,net_type='co')
+    c,g = nf_lancuda.generate_random_net_circuit(n=5, nin=2, nout=2, net_type='co')
+    print(c)
+
+def main():
+    # singularity_test()
+    # xor_test()
+    graph_generator_test()
 
 def other_main():
     nf = NetworkFitter()
