@@ -144,6 +144,7 @@ class Percolator:
 
         return defconfig
 
+    # TODO fix box size (remove coefficients 0.9) etc
     def create_elect_boxes(self,elmat=[1, 1], gap=0.3, plane=0,
                            box={'x0': 0, 'y0': 0, 'z0': 0, 'x1': 100, 'y1': 100, 'z1': 100}, delta=(0, 0, 0)):
         elects = self.get_electrodes_rects(elmat, gap=gap)
