@@ -60,7 +60,7 @@ def singh_window(g,l,tau):
 
 def transform_network_to_circuit_window(graph, inels=[], outels=[], contels=[], mobility=2.56E-9, Ron_pnm=100,
                                             Roff_pnm=1000, nw_res_per_nm=0.005, junct_res_per_nm=500, t_step="5e-6",
-                                            scale=1e-9, elemceil=10000, randomized_mem_width=False,
+                                            scale=1e-9, randomized_mem_width=False,
                                             mem_cutoff_len_nm=10,window=None):
 
     if window == None:
@@ -86,7 +86,7 @@ def transform_network_to_circuit_window(graph, inels=[], outels=[], contels=[], 
 
     drainres = 100
 
-    elemceil = elemceil  # maximum id of element
+    elemceil = len(graph.edges)*2  # maximum id of element
 
     edges = graph.edges()
     elemtypes = nx.get_edge_attributes(graph, 'edgetype')
@@ -188,7 +188,7 @@ def transform_network_to_circuit_window(graph, inels=[], outels=[], contels=[], 
 
 def transform_network_to_circuit_res_cutoff(graph, inels=[], outels=[], contels=[], mobility=2.56E-9, Ron_pnm=100,
                                             Roff_pnm=1000, nw_res_per_nm=0.005, junct_res_per_nm=500, t_step="5e-6",
-                                            scale=1e-9, elemceil=10000, randomized_mem_width=False,
+                                            scale=1e-9, randomized_mem_width=False,
                                             mem_cutoff_len_nm=10):
     pos3d = nx.get_node_attributes(graph, 'pos3d')
     #     el_type='m'
@@ -205,7 +205,7 @@ def transform_network_to_circuit_res_cutoff(graph, inels=[], outels=[], contels=
 
     drainres = 100
 
-    elemceil = elemceil  # maximum id of element
+    elemceil = len(graph.edges)*2  # maximum id of element
 
     edges = graph.edges()
     elemtypes = nx.get_edge_attributes(graph, 'edgetype')
@@ -306,7 +306,7 @@ def transform_network_to_circuit_res_cutoff(graph, inels=[], outels=[], contels=
     return result
 
 
-def transform_network_to_circuit(graph, inels=[], outels=[], contels=[],mobility = 2.56E-9, Ron_pnm=100,Roff_pnm=1000, nw_res_per_nm=0.005, junct_res_per_nm=25, t_step="5e-6", scale=1e-9,elemceil = 10000,randomized_mem_width=False):
+def transform_network_to_circuit(graph, inels=[], outels=[], contels=[],mobility = 2.56E-9, Ron_pnm=100,Roff_pnm=1000, nw_res_per_nm=0.005, junct_res_per_nm=25, t_step="5e-6", scale=1e-9,randomized_mem_width=False):
     pos3d = nx.get_node_attributes(graph, 'pos3d')
     #     el_type='m'
     rndmzd = randomized_mem_width
@@ -320,7 +320,7 @@ def transform_network_to_circuit(graph, inels=[], outels=[], contels=[],mobility
 
     drainres = 100
 
-    elemceil = elemceil  # maximum id of element
+    elemceil = len(graph.edges)*2  # maximum id of element
 
     edges = graph.edges()
     elemtypes = nx.get_edge_attributes(graph, 'edgetype')
@@ -432,7 +432,7 @@ def transform_network_to_circuit_plain(graph, inels=[], outels=[], t_step="5e-6"
 
     drainres = 100
 
-    elemceil = 10000  # maximum id of element
+    elemceil = len(graph.edges)*2  # maximum id of element
 
     edges = graph.edges()
     elemtypes = nx.get_edge_attributes(graph, 'edgetype')
@@ -518,7 +518,7 @@ def generate_random_net_circuit(n=10, p=2, k=4, nin=2, nout=2, el_type='m', rndm
 
     drainres = 100
 
-    elemceil = 10000  # maximum id of element
+    elemceil = np.floor(n**2.5)  # maximum id of element
 
     G = generate_random_net(n=n, p=p, k=k, net_type=net_type)
     edges = G.edges()
