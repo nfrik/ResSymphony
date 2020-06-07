@@ -117,6 +117,7 @@ class NetWorker2(object):
         datac['simulation']['is3D'] = is3D
         datac['simulation']['steps'] = 0
         datac['simulation']['tag'] = tag
+        datac['simulation']['isEllipsoidal'] = False
 
         #         key1=self.perc.create()
 

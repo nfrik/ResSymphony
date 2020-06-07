@@ -91,7 +91,8 @@ class Percolator:
                 "seed": 0,
                 "steps": 0,
                 "tag": "string",
-                "withAir": False
+                "withAir": False,
+                "isEllipsoidal":False,
             },
             "spaghetti": {
                 "angleDev": 0,
