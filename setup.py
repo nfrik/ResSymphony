@@ -1,6 +1,6 @@
 from setuptools import setup
 
-version = '0.4.10'
+version = '5.0'
 
 setup(name='ressymphony',
       version=version,
