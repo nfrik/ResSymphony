@@ -335,7 +335,7 @@ class Percolator:
         response = requests.request("POST", url, headers=headers,params=payload)
         return json.loads(json.dumps(response.text))
 
-    def periodic_bondary(self,key):
+    def periodic_boundary(self,key):
         url = urljoin(Percolator.serverUrl_uuid, 'periodic-boundary')
         payload = {'uuid': key}
         headers = {
