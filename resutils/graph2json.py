@@ -9,8 +9,10 @@ import resutils.nxgtutils as nxutils
 def get_currents_for_graph(graph,circuit,currents):
 
     elcur={}
+    elvol={}
     for element in json.loads(currents)['elements']:
         elcur[element['elementId']]=element['current']
+        elvol[element['elementId']]=element['voltageDiff']
 
     dutcirc=json.loads(circuit['circuit'])
 
@@ -21,8 +23,10 @@ def get_currents_for_graph(graph,circuit,currents):
         if dutcirc[k][0] not in ['R','g']:
             try:
                 cur=elcur[eid]
+                volt=elvol[eid]
                 graph.edges()[ed]['elementid']=eid
                 graph.edges()[ed]['current']=cur
+                graph.edges()[ed]['voltage']=volt
             except:
 #                 print("Auxilary element {} can't be used in the circuit".format(dutcirc[k]))
                 pass
