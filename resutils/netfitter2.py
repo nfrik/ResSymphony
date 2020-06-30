@@ -383,6 +383,8 @@ class NetworkFitter():
                        str(totwidth_rnd if rndmzd else totwidth), str(mobility)]
             elif el_type == 'd':
                 lst = ["d", ed[0], ed[1], 1, elemid, "0.805904"]
+            elif el_type == 'r':
+                lst = ['r', ed[0], ed[1], 0, elemid, str(0.5*(Ron+Roff))]
             doc[elemid] = lst
 
         nodes = list(G.nodes)
