@@ -325,8 +325,11 @@ class Percolator:
         response = requests.request("POST", url, headers=headers, params=payload)
         return json.loads(json.dumps(response.text))
 
-    def cut(self,key):
-        url = urljoin(Percolator.serverUrl_uuid, 'cut')
+    def cut(self,key,ext=False):
+        if ext:
+            url = urljoin(Percolator.serverUrl_uuid, 'cutext')
+        else:
+            url = urljoin(Percolator.serverUrl_uuid, 'cut')
         payload = {'uuid': key}
         headers = {
             'Content-Type': 'application/json',
