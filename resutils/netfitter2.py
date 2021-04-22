@@ -390,12 +390,12 @@ class NetworkFitter():
             if el_type == 'm':
                 totwidth_rnd = totwidth + np.max([0,random.uniform(-totwidth / totwidth_rnd_delta, totwidth / totwidth_rnd_delta)])
                 dopwidth_rnd = random.uniform(0., totwidth_rnd)
-                lst = ["m", ed[0], ed[1], 0, elemid, str(Ron), str(Roff), str(dopwidth_rnd if rndmzd else dopwidth),
+                lst = ["m", int(ed[0]), int(ed[1]), 0, elemid, str(Ron), str(Roff), str(dopwidth_rnd if rndmzd else dopwidth),
                        str(totwidth_rnd if rndmzd else totwidth), str(mobility)]
             elif el_type == 'd':
-                lst = ["d", ed[0], ed[1], 1, elemid, "0.805904"]
+                lst = ["d", int(ed[0]), int(ed[1]), 1, elemid, "0.805904"]
             elif el_type == 'r':
-                lst = ['r', ed[0], ed[1], 0, elemid, str(0.5*(Ron+Roff))]
+                lst = ['r', int(ed[0]), int(ed[1]), 0, elemid, str(0.5*(Ron+Roff))]
             doc[elemid] = lst
 
         nodes = list(G.nodes)
@@ -557,4 +557,6 @@ def other_main():
 
 if __name__ == "__main__":
     # other_main()
+    nf = NetworkFitter()
+    circ2, g = nf.generate_random_net_circuit(n=50, nin=2, nout=2, ncont=6, p=0.2, k=4, rmp=0.8, net_type='sp')
     main()
