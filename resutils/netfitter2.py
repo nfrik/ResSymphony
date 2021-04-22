@@ -18,6 +18,7 @@ from sklearn.preprocessing import StandardScaler
 import logging
 from tqdm import tqdm_notebook
 from tqdm import tqdm
+import scipy as sp
 
 DAT_DELTA = 0.03  # multiplier for voltage variation
 logger = logging.getLogger(__name__)
@@ -336,6 +337,14 @@ class NetworkFitter():
 
         return logreg.score(X, y)
 
+    def generate_sparse_net(self, n=50, sparsity=0.95):
+        A = sp.random.rand(40, 40)
+        A[sp.random.rand(*A.shape) < 0.95] = 0
+        A = sp.sparse.csc_matrix(A)
+        G = nx.from_scipy_sparse_matrix(A)
+        G.remove_nodes_from(list(nx.isolates(G)))
+        return G
+
     def generate_random_net(self, n=20, p=2, k=4, rmp=0.1, net_type='ws', plot=False):
         # G = nx.complete_graph(10)
         # G = nx.fast_gnp_random_graph(n=n,p=p)
@@ -347,6 +356,8 @@ class NetworkFitter():
             G = ngut.generate_lattice(n=n, dim=2, rmp=rmp, periodic=False)
         elif net_type == 'co':
             G = nx.complete_graph(n)
+        elif net_type == 'sp':
+            G = self.generate_sparse_net(n=n,sparsity=rmp)
 
         # print("Total edges generated", len(G.edges()))
         logger.info("Total edges generated" + str(len(G.edges())))
