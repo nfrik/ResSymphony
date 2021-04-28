@@ -22,7 +22,7 @@ class Utilities:
             'accept': "application/json"
         }
 
-        url = Utilities.serverUrl+"simulations"
+        url = self.serverUrl+"simulations"
 
         payload = ""
 
@@ -32,7 +32,7 @@ class Utilities:
 
     # Get all currently running simulations
     def getSimulations(self):
-        url = Utilities.serverUrl + "simulations"
+        url = self.serverUrl + "simulations"
 
         response = requests.request("GET", url)
 
@@ -42,7 +42,7 @@ class Utilities:
     def addGraphElements(self,key,elementsJsonString):
         files = {'file': ('circuit.json', elementsJsonString)}
 
-        url = Utilities.serverUrl + "simulations/" + key + "/addGraphElementsFromFile"
+        url = self.serverUrl + "simulations/" + key + "/addGraphElementsFromFile"
 
         response = requests.request("POST", url, files=files)
 
@@ -53,7 +53,7 @@ class Utilities:
     def addGraphElementsFromFile(self,key,jsonFile):
         files = {'file': open(jsonFile, 'rb')}
 
-        url = Utilities.serverUrl + "simulations/" + key + "/addGraphElementsFromFile"
+        url = self.serverUrl + "simulations/" + key + "/addGraphElementsFromFile"
 
         response = requests.request("POST", url, files=files)
 
@@ -62,7 +62,7 @@ class Utilities:
     # Returns currently loaded graph circuit as JSON string
     def currentCircuitAsJSONGraph(self,key):
         #post
-        url = Utilities.serverUrl + "simulations/" + key + "/currentCircuitAsJSONGraph"
+        url = self.serverUrl + "simulations/" + key + "/currentCircuitAsJSONGraph"
 
         response = requests.request("GET", url)
 
@@ -72,7 +72,7 @@ class Utilities:
 
     # Delete graph elements of a circuit
     def deleteGraphElement(self,key,elementId):
-        url = Utilities.serverUrl + "simulations/" + key + "/startForAndWait"
+        url = self.serverUrl + "simulations/" + key + "/startForAndWait"
         querystring = {"elementId": elementId}
 
         headers = {
@@ -86,7 +86,7 @@ class Utilities:
 
     # List all available element properties
     def getElementProperties(self,key,elementId):
-        url = Utilities.serverUrl + "simulations/" + key + "/element/"+elementId
+        url = self.serverUrl + "simulations/" + key + "/element/"+elementId
         querystring = {"elementId": elementId}
 
         headers = {
@@ -100,7 +100,7 @@ class Utilities:
 
     # Get element property
     def getElementProperty(self, key, elementId,propertyKey):
-        url = Utilities.serverUrl + "simulations/" + key + "/element/" + elementId+"/property"
+        url = self.serverUrl + "simulations/" + key + "/element/" + elementId+"/property"
         querystring = {"propertyKey": propertyKey}
 
         headers = {
@@ -114,7 +114,7 @@ class Utilities:
 
     def getElementsIVs(self, key):
         # post
-        url = Utilities.serverUrl + "simulations/" + key + "/elements"
+        url = self.serverUrl + "simulations/" + key + "/elements"
 
         response = requests.request("GET", url)
 
@@ -122,7 +122,7 @@ class Utilities:
 
     # Changes specified element property to a given value
     def setElementProperty(self,key,elementId, propertyKey, newValue):
-        url = Utilities.serverUrl + "simulations/" + key + "/element/" + elementId+"/property"
+        url = self.serverUrl + "simulations/" + key + "/element/" + elementId+"/property"
         querystring = {"propertyKey": propertyKey,"newValue":newValue}
 
         headers = {
@@ -137,7 +137,7 @@ class Utilities:
     # POST / symphony / simulations / {key} / element / {elementId} / current
     #  Returns current for specified element (real time)
     def getCurrent(self,key,elementId):
-        url = Utilities.serverUrl + "simulations/" + key + "/element/" + elementId + "/current"
+        url = self.serverUrl + "simulations/" + key + "/element/" + elementId + "/current"
 
         headers = {
             'content-type': "application/json",
@@ -151,7 +151,7 @@ class Utilities:
     # POST / symphony / simulations / {key} / element / {elementId} / peekCurrent
     # Returns current on specified element when last measurement was performed
     def peekCurrent(self, key, elementId):
-        url = Utilities.serverUrl + "simulations/" + key + "/element/" + elementId + "/peekCurrent"
+        url = self.serverUrl + "simulations/" + key + "/element/" + elementId + "/peekCurrent"
 
         headers = {
             'content-type': "application/json",
@@ -164,7 +164,7 @@ class Utilities:
 
     # Returns voltage diff on specified element when last measurement was performed
     def peekVoltageDiff(self,key,elementId):
-        url = Utilities.serverUrl + "simulations/" + key + "/element/" + elementId + "/peekVoltageDiff"
+        url = self.serverUrl + "simulations/" + key + "/element/" + elementId + "/peekVoltageDiff"
 
         headers = {
             'content-type': "application/json",
@@ -177,7 +177,7 @@ class Utilities:
 
     # Returns voltage diff on specified element (real time)
     def getVoltageDiff(self,key,elementId):
-        url = Utilities.serverUrl + "simulations/" + key + "/element/" + elementId + "/voltageDiff"
+        url = self.serverUrl + "simulations/" + key + "/element/" + elementId + "/voltageDiff"
 
         headers = {
             'content-type': "application/json",
@@ -197,7 +197,7 @@ class Utilities:
         files = {'file':open(cmfFilePath,'rb')}
         #files = {'file': ('report.csv', 'some,data,to,send\nanother,row,to,send\n')}
 
-        url = Utilities.serverUrl + "simulations/" + key + "/loadCircuit"
+        url = self.serverUrl + "simulations/" + key + "/loadCircuit"
 
         response = requests.request("POST", url, files=files)
 
@@ -207,7 +207,7 @@ class Utilities:
     def loadCircuitFromGraphFile(self,key,jsonFile):
         files = {'file': open(jsonFile, 'rb')}
 
-        url = Utilities.serverUrl + "simulations/" + key + "/loadCircuitFromGraph"
+        url = self.serverUrl + "simulations/" + key + "/loadCircuitFromGraph"
 
         response = requests.request("POST", url, files=files)
 
@@ -217,7 +217,7 @@ class Utilities:
     def loadCircuitFromGraphString(self, key, jsonString):
         files = {'file': ('circuit.json', jsonString)}
 
-        url = Utilities.serverUrl + "simulations/" + key + "/loadCircuitFromGraph"
+        url = self.serverUrl + "simulations/" + key + "/loadCircuitFromGraph"
 
         response = requests.request("POST", url, files=files)
 
@@ -227,7 +227,7 @@ class Utilities:
 
     def measurements(self,key):
         # post
-        url = Utilities.serverUrl + "simulations/" + key + "/measurements_json"
+        url = self.serverUrl + "simulations/" + key + "/measurements_json"
 
         response = requests.request("GET", url)
 
@@ -235,7 +235,7 @@ class Utilities:
 
     def statistics(self,key):
         # post
-        url = Utilities.serverUrl + "simulations/" + key + "/statistics"
+        url = self.serverUrl + "simulations/" + key + "/statistics"
 
         response = requests.request("GET", url)
 
@@ -243,7 +243,7 @@ class Utilities:
 
     def measurements_gzip(self,key):
         # post
-        url = Utilities.serverUrl + "simulations/" + key + "/measurements_gzip"
+        url = self.serverUrl + "simulations/" + key + "/measurements_gzip"
 
         response = requests.request("GET", url)
 
@@ -258,7 +258,7 @@ class Utilities:
     # Changes peek interval of measurements
     def settings(self,key, peekInterval, pokeInterval):
 
-        url = Utilities.serverUrl + "simulations/" + key + "/settings"
+        url = self.serverUrl + "simulations/" + key + "/settings"
 
         headers = {
             'content-type': "application/json",
@@ -273,7 +273,7 @@ class Utilities:
     def setArbWaveData(self, key, arbwavedict):
         jsonString=json.dumps(arbwavedict)
         # files = {'file': ('circuit.json', jsonString)}
-        url = Utilities.serverUrl + "simulations/" + key + "/setArbwaveData"
+        url = self.serverUrl + "simulations/" + key + "/setArbwaveData"
 
         headers = {
             'content-type': "application/json",
@@ -287,7 +287,7 @@ class Utilities:
     def setMeasurableElements(self, key, measurables):
         jsonString=json.dumps(measurables)
         # files = {'file': ('circuit.json', jsonString)}
-        url = Utilities.serverUrl + "simulations/" + key + "/setMeasurableElements"
+        url = self.serverUrl + "simulations/" + key + "/setMeasurableElements"
 
         headers = {
             'content-type': "application/json",
@@ -300,7 +300,7 @@ class Utilities:
 
     # Returns simulation time when last measurement was performed
     def peekTime(self,key):
-        url = Utilities.serverUrl + "simulations/" + key + "/peekTime"
+        url = self.serverUrl + "simulations/" + key + "/peekTime"
         headers = {
             'content-type': "application/json",
             'accept': "application/json"
@@ -312,7 +312,7 @@ class Utilities:
 
     # Returns simulation time when last measurement was performed
     def time(self,key):
-        url = Utilities.serverUrl + "simulations/" + key + "/time"
+        url = self.serverUrl + "simulations/" + key + "/time"
         headers = {
             'content-type': "application/json",
             'accept': "application/json"
@@ -324,7 +324,7 @@ class Utilities:
 
     # Starts simulation and returns immediately
     def start(self,key):
-        url = Utilities.serverUrl + "simulations/" + key + "/start"
+        url = self.serverUrl + "simulations/" + key + "/start"
         headers = {
             'content-type': "application/json",
             'accept': "application/json"
@@ -336,7 +336,7 @@ class Utilities:
 
     # Starts simulation for specified period of simulated circuit seconds and returns immediately
     def startFor(self,key,seconds):
-        url = Utilities.serverUrl + "simulations/" + key + "/start"
+        url = self.serverUrl + "simulations/" + key + "/start"
         querystring = {"seconds":seconds}
 
         headers = {
@@ -351,7 +351,7 @@ class Utilities:
     # Starts simulation for specified period of simulated circuit seconds and waits for it to finish
     # before completing the request.
     def startForAndWait(self,key,seconds):
-        url = Utilities.serverUrl + "simulations/" + key + "/startForAndWait"
+        url = self.serverUrl + "simulations/" + key + "/startForAndWait"
         querystring = {"seconds": seconds}
 
         headers = {
@@ -365,7 +365,7 @@ class Utilities:
 
     # Stops simulation, after this it can be still resumed
     def stop(self,key):
-        url = Utilities.serverUrl + "simulations/" + key + "/stop"
+        url = self.serverUrl + "simulations/" + key + "/stop"
 
         headers = {
             'content-type': "application/json",
@@ -378,7 +378,7 @@ class Utilities:
 
     # Kills simulation, after this it will become inaccessible
     def kill(self,key):
-        url = Utilities.serverUrl + "simulations/" + key + "/kill"
+        url = self.serverUrl + "simulations/" + key + "/kill"
 
         headers = {
             'content-type': "application/json",
