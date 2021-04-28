@@ -11,7 +11,7 @@ class Utilities:
     serverUrl = ""
 
     def __init__(self, serverUrl):
-        Utilities.serverUrl=serverUrl
+        self.serverUrl=serverUrl
 
 
     # Create new simulation and retrieve unique simulation key
