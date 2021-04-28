@@ -338,8 +338,8 @@ class NetworkFitter():
         return logreg.score(X, y)
 
     def generate_sparse_net(self, n=50, sparsity=0.95):
-        A = sp.random.rand(40, 40)
-        A[sp.random.rand(*A.shape) < 0.95] = 0
+        A = sp.random.rand(n, n)
+        A[sp.random.rand(*A.shape) < sparsity] = 0
         A = sp.sparse.csc_matrix(A)
         G = nx.from_scipy_sparse_matrix(A)
         G.remove_nodes_from(list(nx.isolates(G)))
