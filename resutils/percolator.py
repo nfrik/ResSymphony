@@ -37,7 +37,10 @@ class Percolator:
         Percolator.serverUrl = serverUrl
         Percolator.serverUrl_uuid = urljoin(serverUrl, "{uuid}/")
         # Percolator.serverUrl_uuid = serverUrl+"uuid/"
-
+    
+    def connected_component_subgraphs(self,G):
+        return (G.subgraph(c).copy() for c in nx.connected_components(G))
+    
     def get_default_config(self):
 
         defconfig = {
@@ -199,7 +202,7 @@ class Percolator:
 
     def get_graphs_connecting_electrodearrays(self,supergraph, el_arrays=None):
         pos3d = nx.get_node_attributes(supergraph, 'pos3d')
-        subgraphs = list(nx.connected_component_subgraphs(supergraph))
+        subgraphs = list(self.connected_component_subgraphs(supergraph))
         accepted_graphs = []
         nodes_in_earray = {}
         for sg in subgraphs:
@@ -717,7 +720,7 @@ class Percolator:
 
     # find subraphs which have connections between xmin+/-delta and xmax+/-delta
 
-    # subgraphs=list(nx.connected_component_subgraphs(G))
+    # subgraphs=list(self.connected_component_subgraphs(G))
     # accepted_graphs=[]
     # xdelta=25
     # xmin=min([k[0] for k in pos.values()])
@@ -773,7 +776,7 @@ class Percolator:
 
     def get_connected_graphs(self,supergraph, xdelta):
         pos = nx.get_node_attributes(supergraph, 'pos')
-        subgraphs = list(nx.connected_component_subgraphs(supergraph))
+        subgraphs = list(self.connected_component_subgraphs(supergraph))
         xmin = min([k[0] for k in pos.values()])
         xmax = max([k[0] for k in pos.values()])
         accepted_graphs = []
@@ -798,7 +801,7 @@ class Percolator:
     # retrieves graphs connected to elects1 and elects2 - electrode arrays along x axis
     def get_connected_graphs_electrodes(self,supergraph, elects1, elects2, delta, box, boy, boz):
         pos3d = nx.get_node_attributes(supergraph, 'pos3d')
-        subgraphs = list(nx.connected_component_subgraphs(supergraph))
+        subgraphs = list(self.connected_component_subgraphs(supergraph))
         #     xmin,xmax,ymin,ymax,zmin,zmax = get_3d_minmax(supergraph)
         accepted_graphs = []
         for sg in subgraphs:
