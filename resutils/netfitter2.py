@@ -8,7 +8,7 @@ import random
 import time
 import numpy as np
 from sklearn import linear_model
-#from evolutionary_search import maximize
+from evolutionary_search import maximize
 from pprint import pprint
 import multiprocessing as mp
 from itertools import repeat
@@ -52,6 +52,16 @@ class NetworkFitter():
         logger.debug(response)
         key = json.loads(response)["key"]
         response = utils.loadCircuitFromGraphString(key, jsonstr)
+        logger.debug(response)
+
+        return key
+
+
+    def init_steps_cmf(self,file,utils):
+        response = utils.createNewSimulation()
+        logger.debug(response)
+        key = json.loads(response)["key"]
+        response = utils.loadCircuit(key, file)
         logger.debug(response)
 
         return key
